@@ -28,3 +28,5 @@ vesicle_zchunk:
     [1588, 1688],
     [1688, 1828],
   ]
+
+result_folder: "/data/projects/weilab/dataset/hydra/results/"

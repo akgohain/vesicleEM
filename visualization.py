@@ -23,14 +23,16 @@ if opt[0] == '0':
     if opt == '0': 
         # python -i visualization.py 0
         # visualize bv mask
-        seg_id = 16
-        
         res = np.array([32,32,30])
-        bb = segid_to_bbox(conf, seg_id)        
-        oset = bb[::2]//[1,4,4]        
-        mask = read_h5(f'seg_{seg_id}.h5').astype(np.uint8)
-        
         with viewer.txn() as s:
-            s.layers['image'] = neuroglancer.ImageLayer(source=D0)
-            s.layers.append(name='mask',layer=ng_layer(mask, res, oo=oset[::-1]))
+            s.layers['image'] = neuroglancer.ImageLayer(source=D0) 
+        
+        def dsp_neuron(seg_ids):
+            for seg_id in seg_ids:
+                bb = segid_to_bbox(conf, seg_id)        
+                oset = bb[::2]//[1,4,4]        
+                mask = read_h5(f'results/neuron_{seg_id}.h5').astype(np.uint8)        
+                with viewer.txn() as s:            
+                    s.layers.append(name='mask',layer=ng_layer(mask, res, oo=oset[::-1]))
+        dsp_neuron([16,17])
     print(viewer)

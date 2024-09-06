@@ -86,4 +86,4 @@ if __name__ == "__main__":
     elif opt == '1':
         seg_id = int(sys.argv[2])
         seg = segid_to_neuron(conf, seg_id)
-        write_h5(f'results/neuron_{seg_id}.h5', seg)
+        write_h5(f'{conf["result_folder"]}/neuron_{seg_id}_30-32-32.h5', seg)

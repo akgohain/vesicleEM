@@ -5,10 +5,8 @@ from em_util.io import mkdir
 
 
    
-if __name__== "__main__":
-    # sa zf
-    # python main.py -t waterz
-    # python main.py -t waterz -i 0 -n 57
+if __name__== "__main__":        
+    # python slurm.py 0 17
     opt = sys.argv[1]
     job_num = int(sys.argv[2])
     conf = {
