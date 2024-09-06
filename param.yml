@@ -1,0 +1,30 @@
+mask_folder: "/data/projects/weilab/dataset/hydra/mask_mip1/png/"
+mask_bbox_folder: "/data/projects/weilab/dataset/hydra/mask_mip1/bbox/"
+mask_template: "Neuron_1_240409_ENDO_no bridge_no ecto.vsseg_export_s{:04d}_Y%d_X%d.png"
+mask_meta: "/data/projects/weilab/dataset/hydra/mask_mip1/meta.txt"
+mask_size: [1830, 8192, 8192]
+
+vesicle_pred_path_big: "/data/projects/weilab/hydra/2024_08_19/tile_{:d}-{:d}/%d-%d_pred.h5"
+vesicle_chunk_path_big: "/data/projects/weilab/hydra/2024_08_19_dw/tile_{:d}-{:d}/%d-%d_pred.h5"
+vesicle_pad: [8, 128, 128]
+vesicle_zchunk_meta: "/data/projects/weilab/dataset/hydra/im_chunk/tile_{:d}-{:d}.txt"
+vesicle_zchunk:
+  [
+    [0, 188],
+    [188, 288],
+    [288, 388],
+    [388, 488],
+    [488, 588],
+    [588, 688],
+    [688, 788],
+    [788, 888],
+    [888, 988],
+    [988, 1088],
+    [1088, 1188],
+    [1188, 1288],
+    [1288, 1388],
+    [1388, 1488],
+    [1488, 1588],
+    [1588, 1688],
+    [1688, 1828],
+  ]
