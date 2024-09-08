@@ -52,7 +52,7 @@ def crop_to_chunk(conf, opt='big', job_id=0, job_num=1):
 if __name__ == "__main__":
     opt = sys.argv[1]
     vesicle = sys.argv[2]
-    conf = read_yml('param.yml')
+    conf = read_yml('conf/param.yml')
     if opt == '0':        
         # convert deep learning prediction into 100x4096x4096 chunks
         # python vesicle_mask.py 0 big 0 1

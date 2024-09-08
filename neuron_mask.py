@@ -70,7 +70,7 @@ def segid_to_neuron(conf, seg_id):
 
 if __name__ == "__main__":
     opt = sys.argv[1]
-    conf = read_yml('param.yml')
+    conf = read_yml('conf/param.yml')
     if opt[0] == '0':
         # convert VAST export segments into bbox
         if opt == '0':
