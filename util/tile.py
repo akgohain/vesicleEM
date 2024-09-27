@@ -217,6 +217,7 @@ def read_tile_h5(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], cid=-1, d
                         tmp_max = tmp.max()
                         tmp[tmp > 0] += mid
                         mid += tmp_max
+                        print(mid)
                         
                     result[z0a-z0:z1a-z0, y0a-y0:y1a-y0, x0a-x0:x1a-x0] = tmp
     return result

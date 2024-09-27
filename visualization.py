@@ -37,8 +37,8 @@ if opt[0] == '0':
             for seg_id in seg_ids:
                 bb = segid_to_bbox(conf, seg_id)        
                 oset = bb[::2]//[1,4,4]        
-                mask = read_h5(f'{conf["result_folder"]}/{name}_{seg_id}_30-32-32.h5').astype(np.uint8)        
-                with viewer.txn() as s:            
+                mask = read_h5(f'{conf["result_folder"]}/{name}_{seg_id}_30-32-32.h5')
+                with viewer.txn() as s:
                     s.layers.append(name='mask',layer=ng_layer(mask, res, oo=oset[::-1]))
         dsp_seg('neuron', [16])
         dsp_seg('vesicle_big', [16])

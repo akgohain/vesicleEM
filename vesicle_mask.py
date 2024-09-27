@@ -79,5 +79,6 @@ if __name__ == "__main__":
         # return the vesicle prediction within the neuron bounding box
         # python vesicle_mask.py 1 big 16
         seg_id = int(sys.argv[3])
+        import pdb; pdb.set_trace()
         seg = segid_to_vesicle(conf, seg_id, sys.argv[2])
         write_h5(f'{conf["result_folder"]}/vesicle_{sys.argv[2]}_{seg_id}_30-32-32.h5', seg)
