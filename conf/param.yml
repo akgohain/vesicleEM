@@ -5,7 +5,7 @@ mask_meta: "/data/projects/weilab/dataset/hydra/mask_mip1/meta.txt"
 mask_size: [1830, 8192, 8192]
 
 vesicle_pred_path_big: "/data/projects/weilab/hydra/2024_08_19/tile_{:d}-{:d}/%d-%d_pred.h5"
-vesicle_chunk_path_big: "/data/projects/weilab/hydra/2024_08_19_dw/tile_{:d}-{:d}/%d-%d_pred.h5"
+vesicle_chunk_path_big: "/data/projects/weilab/hydra/2024_09_13/tile_{:d}-{:d}/%d-%d_pred.h5"
 vesicle_pad: [8, 128, 128]
 vesicle_zchunk_meta: "/data/projects/weilab/dataset/hydra/im_chunk/tile_{:d}-{:d}.txt"
 vesicle_zchunk:

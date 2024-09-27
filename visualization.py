@@ -25,7 +25,7 @@ if opt[0] == '0':
     with viewer.txn() as s:
         s.layers['image'] = neuroglancer.ImageLayer(source=D0)
     
-    conf = read_yml('param.yml')
+    conf = read_yml('conf/param.yml')
     if opt == '0': 
         # python -i visualization.py 0
         # visualize bv mask
@@ -33,12 +33,13 @@ if opt[0] == '0':
         with viewer.txn() as s:
             s.layers['image'] = neuroglancer.ImageLayer(source=D0) 
         
-        def dsp_neuron(seg_ids):
+        def dsp_seg(name, seg_ids):
             for seg_id in seg_ids:
                 bb = segid_to_bbox(conf, seg_id)        
                 oset = bb[::2]//[1,4,4]        
-                mask = read_h5(f'{conf["result_folder"]}/neuron_{seg_id}_30-32-32.h5').astype(np.uint8)        
+                mask = read_h5(f'{conf["result_folder"]}/{name}_{seg_id}_30-32-32.h5').astype(np.uint8)        
                 with viewer.txn() as s:            
                     s.layers.append(name='mask',layer=ng_layer(mask, res, oo=oset[::-1]))
-        dsp_neuron([16,17])
+        dsp_seg('neuron', [16])
+        dsp_seg('vesicle_big', [16])
     print(viewer)

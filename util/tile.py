@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import h5py
 from .io import read_image
 
 def get_tile_name(pattern, row=None, column=None):
@@ -146,4 +147,76 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
         result = np.pad(
             result, ((bd[0], bd[1]), (bd[2], bd[3]), (bd[4], bd[5])), tile_border_padding
         )
+    return result
+
+
+def read_tile_h5(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], cid=-1, dt=np.uint16, 
+                 zz=[0,0,-1], tile_step=1, zstep=1, acc_id = False, h5_key='main'):
+    if not isinstance(tile_step, (list,)):
+        tile_step = [tile_step, tile_step]
+    # zz: extra number of slices in the first and last chunk 
+    # zz[2]: last zid slice
+    result = np.zeros((z1-z0, y1-y0, x1-x0), dt)
+    c0 = max(0,x0-zyx0[2]) // zyx_sz[2] # floor
+    c1 = (x1-zyx0[2]+zyx_sz[2]-1) // zyx_sz[2] # ceil
+    r0 = max(0,y0-zyx0[1]) // zyx_sz[1]
+    r1 = (y1-zyx0[1]+zyx_sz[1]-1) // zyx_sz[1]
+    d0 = max(0,z0-zyx0[0]-zz[0]) // zyx_sz[0]
+    d1 = (z1-zyx0[0]-zz[0]+zyx_sz[0]-1) // zyx_sz[0]
+    if zz[2] > 0:
+        d1 = min(zz[2], d1)
+
+    mid = 0
+    for zid in range(d0, d1):
+        for yid in range(r0, r1):
+            for xid in range(c0, c1):
+                path = h5Name(zid,yid,xid)                
+                if os.path.exists(path):
+                    fid = h5py.File(path,'r')[h5_key]
+                    xp0 = xid * zyx_sz[2] + zyx0[2]
+                    xp1 = (xid+1) * zyx_sz[2]+ zyx0[2]
+                    yp0 = yid * zyx_sz[1] + zyx0[1]
+                    yp1 = (yid + 1) * zyx_sz[1]+ zyx0[1]
+                    # chunk afterwards start with extra zz[0]
+                    zp0 = zid * zyx_sz[0] + zyx0[0]                    
+                    if zid != 0:
+                        zp0 += zz[0]
+                    # all chunks end with extra zz[0]+zz[1]
+                    zp1 = (zid + 1) * zyx_sz[0]+ zyx0[0]                                        
+                    zp1 += zz[0]
+                    if zid == zz[2]:
+                       zp1 += zz[1] 
+
+                    x0a = max(x0, xp0)
+                    x1a = min(x1, xp1)
+                    y0a = max(y0, yp0)
+                    y1a = min(y1, yp1)
+                    z0a = max(z0, zp0)
+                    z1a = min(z1, zp1)
+                    # cid: channel selection
+                    # print(z0a, z1a, y0a, y1a, x0a, x1a)
+                    # print(zp0, zp1, yp0, yp1, xp0, xp1)
+                    if cid==-1:
+                        if len(fid.shape)==3:
+                            # import pdb;pdb.set_trace()
+                            tmp = np.array(fid[(z0a - zp0)*zstep : (z1a - zp0)*zstep : zstep, \
+                                               (y0a - yp0)*tile_step[0] : (y1a - yp0)*tile_step[0] : tile_step[0], \
+                                               (x0a - xp0)*tile_step[1] : (x1a - xp0)*tile_step[1] : tile_step[1]])
+                        else:
+                            tmp = np.array(fid[(y0a - yp0)*tile_step[0] : (y1a - yp0)*tile_step[0] : tile_step[0], \
+                                               (x0a - xp0)*tile_step[1] : (x1a - xp0)*tile_step[1] : tile_step[1]])
+                    elif cid==-2:
+                        tmp = np.array(fid[: , (z0a - zp0)*zstep : (z1a - zp0)*zstep : zstep, \
+                                               (y0a - yp0)*tile_step[0] : (y1a - yp0)*tile_step[0] : tile_step[0], \
+                                               (x0a - xp0)*tile_step[1] : (x1a - xp0)*tile_step[1] : tile_step[1]])
+                    else:
+                        tmp = np.array(fid[cid, (z0a - zp0)*zstep : (z1a - zp0)*zstep : zstep, \
+                                               (y0a - yp0)*tile_step[0] : (y1a - yp0)*tile_step[0] : tile_step[0], \
+                                               (x0a - xp0)*tile_step[1] : (x1a - xp0)*tile_step[1] : tile_step[1]])                   
+                    if acc_id:
+                        tmp_max = tmp.max()
+                        tmp[tmp > 0] += mid
+                        mid += tmp_max
+                        
+                    result[z0a-z0:z1a-z0, y0a-y0:y1a-y0, x0a-x0:x1a-x0] = tmp
     return result

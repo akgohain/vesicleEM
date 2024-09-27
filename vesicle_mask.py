@@ -1,9 +1,26 @@
 import os, sys
 from util import *
 import numpy as np
+from neuron_mask import segid_to_bbox 
 
 def segid_to_vesicle(conf, seg_id, opt='big'):   
-    pass
+    bb = segid_to_bbox(conf, seg_id)
+    # prediction mip1: [30, 8, 8]
+    # target: [30,32,32]
+    def h5Name(z,y,x):
+        z0, z1 = conf['vesicle_zchunk'][z]
+        return conf['vesicle_chunk_path_big'].format(z0, z1) % (y, x)
+    
+    zstep, xystep = 1, 4
+    zyx_sz = [100, 4096// xystep, 4096// xystep]
+    bb[:2] = bb[:2] // zstep
+    bb[2:] = bb[2:] // xystep
+
+    out = read_tile_h5(h5Name, bb[0], bb[1], bb[2], bb[3], bb[4], bb[5], 
+                           zyx_sz, zz=[88,40,15], tile_step=xystep, zstep=zstep, acc_id=True)
+    
+    return out
+    
 
 def crop_to_chunk(conf, opt='big', job_id=0, job_num=1):
     tsz = 256
@@ -59,6 +76,8 @@ if __name__ == "__main__":
         job_id, job_num = int(sys.argv[3]), int(sys.argv[4])
         crop_to_chunk(conf, vesicle, job_id, job_num)
     elif opt == '1':
+        # return the vesicle prediction within the neuron bounding box
+        # python vesicle_mask.py 1 big 16
         seg_id = int(sys.argv[3])
-        seg = segid_to_vesicle(conf, seg_id, 'big')
-        write_h5(f'seg_{seg_id}.h5', seg)
+        seg = segid_to_vesicle(conf, seg_id, sys.argv[2])
+        write_h5(f'{conf["result_folder"]}/vesicle_{sys.argv[2]}_{seg_id}_30-32-32.h5', seg)
