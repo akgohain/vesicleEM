@@ -3,7 +3,7 @@ from util import *
 import numpy as np
 from neuron_mask import segid_to_bbox 
 
-def segid_to_vesicle(conf, seg_id, opt='big'):   
+def segid_to_vesicle(conf, seg_id, ratio=[1,4,4], opt='big'):
     bb = segid_to_bbox(conf, seg_id)
     # prediction mip1: [30, 8, 8]
     # target: [30,32,32]
@@ -11,13 +11,13 @@ def segid_to_vesicle(conf, seg_id, opt='big'):
         z0, z1 = conf['vesicle_zchunk'][z]
         return conf['vesicle_chunk_path_big'].format(z0, z1) % (y, x)
     
-    zstep, xystep = 1, 4
-    zyx_sz = [100, 4096// xystep, 4096// xystep]
-    bb[:2] = bb[:2] // zstep
-    bb[2:] = bb[2:] // xystep
+    zyx_sz = [100, 4096// ratio[1], 4096// ratio[2]]
+    bb[:2] = bb[:2] // ratio[0]
+    bb[2:4] = bb[2:4] // ratio[1]
+    bb[4:] = bb[4:] // ratio[2]
 
     out = read_tile_h5(h5Name, bb[0], bb[1], bb[2], bb[3], bb[4], bb[5], 
-                           zyx_sz, zz=[88,40,15], tile_step=xystep, zstep=zstep, acc_id=True)
+                       zyx_sz, zz=[88,40,15], tile_step=ratio[1:], zstep=ratio[0], acc_id=True)
     
     return out
     
@@ -79,6 +79,12 @@ if __name__ == "__main__":
         # return the vesicle prediction within the neuron bounding box
         # python vesicle_mask.py 1 big 16
         seg_id = int(sys.argv[3])
-        import pdb; pdb.set_trace()
-        seg = segid_to_vesicle(conf, seg_id, sys.argv[2])
-        write_h5(f'{conf["result_folder"]}/vesicle_{sys.argv[2]}_{seg_id}_30-32-32.h5', seg)
+        ratio = [1,1,1]
+        seg = segid_to_vesicle(conf, seg_id, ratio, sys.argv[2])
+        if ratio[1] == 1: # save into png for vast
+            sn = f'{conf["result_folder"]}/vesicle_{sys.argv[2]}_{seg_id}_{ratio[0]*30}-{ratio[1]*8}-{ratio[2]*8}/'
+            mkdir(sn)
+            for z in range(seg.shape[0]):
+                write_image(f'{sn}seg_{z:04d}.png', seg[z], 'seg')
+        else:# save into h5
+            write_h5(f'{conf["result_folder"]}/vesicle_{sys.argv[2]}_{seg_id}_{ratio[0]*30}-{ratio[1]*8}-{ratio[2]*8}.h5', seg)

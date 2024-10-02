@@ -104,7 +104,29 @@ def read_txt(filename):
     with open(filename, "r") as a:
         content = a.readlines()
     return content
-    
+def seg_to_rgb(seg):
+    """
+    Convert a segmentation map to an RGB image.
+
+    Args:
+        seg (numpy.ndarray): The input segmentation map.
+
+    Returns:
+        numpy.ndarray: The RGB image representation of the segmentation map.
+
+    Notes:
+        - The function converts a segmentation map to an RGB image, where each unique segment ID is assigned a unique color.
+        - The RGB image is represented as a numpy array.
+    """
+    return np.stack([seg // 65536, seg // 256, seg % 256], axis=2).astype(
+        np.uint8
+    )
+
+def write_image(filename, image, image_type="image"):
+    if image_type=='seg':
+        image = seg_to_rgb(image)
+    imageio.imsave(filename, image)
+
 def write_txt(filename, content):
     """
     Write content to a text file.
