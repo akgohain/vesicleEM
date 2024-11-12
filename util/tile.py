@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import h5py
+from tqdm import tqdm
 from .io import read_image
 
 def get_tile_name(pattern, row=None, column=None):
@@ -24,10 +25,10 @@ def get_tile_name(pattern, row=None, column=None):
         return pattern
     
     
-def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=None, 
+def read_tile_image_by_bbox(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=None, 
                      tile_dtype=np.uint8, tile_type="image", tile_ratio=1, 
                      tile_resize_mode=1, tile_border_padding="reflect", tile_blank="", 
-                     volume_sz=None, zstep=1):
+                     volume_sz=None, zstep=1, no_tqdm=False):
     """
     Read and assemble a volume from a set of tiled images.
 
@@ -103,7 +104,7 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
     r0 = y0 // tile_sz[0]
     r1 = (y1 + tile_sz[0] - 1) // tile_sz[0]
     z1 = min(len(filenames) - 1, z1)
-    for i, z in enumerate(range(z0, z1, zstep)):
+    for i, z in tqdm(enumerate(range(z0, z1, zstep)), disable=no_tqdm):
         pattern = filenames[z]
         for row in range(r0, r1):
             for column in range(c0, c1):
@@ -150,13 +151,20 @@ def read_tile_volume(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=N
     return result
 
 
-def read_tile_h5(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], cid=-1, dt=np.uint16, 
-                 zz=[0,0,-1], tile_step=1, zstep=1, acc_id = False, h5_key='main'):
+def read_tile_h5_by_bbox(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
+    cid=-1, dt=np.uint16, zz=[0,0,-1], tile_step=1, zstep=1, acc_id = False, \
+        h5_key='main', no_tqdm=False, output_file=None, mask=None):
     if not isinstance(tile_step, (list,)):
         tile_step = [tile_step, tile_step]
     # zz: extra number of slices in the first and last chunk 
     # zz[2]: last zid slice
-    result = np.zeros((z1-z0, y1-y0, x1-x0), dt)
+    
+    if output_file is None:
+        # return the whole volume
+        result = np.zeros((z1-z0, y1-y0, x1-x0), dt)
+    else:
+        result = np.zeros((zyx_sz[0], y1-y0, x1-x0), dt) 
+    
     c0 = max(0,x0-zyx0[2]) // zyx_sz[2] # floor
     c1 = (x1-zyx0[2]+zyx_sz[2]-1) // zyx_sz[2] # ceil
     r0 = max(0,y0-zyx0[1]) // zyx_sz[1]
@@ -167,11 +175,12 @@ def read_tile_h5(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], cid=-1, d
         d1 = min(zz[2], d1)
 
     mid = 0
-    for zid in range(d0, d1):
+    for zid in tqdm(range(d0, d1), disable=no_tqdm):
         for yid in range(r0, r1):
             for xid in range(c0, c1):
                 path = h5Name(zid,yid,xid)                
                 if os.path.exists(path):
+                    print(path)
                     fid = h5py.File(path,'r')[h5_key]
                     xp0 = xid * zyx_sz[2] + zyx0[2]
                     xp1 = (xid+1) * zyx_sz[2]+ zyx0[2]

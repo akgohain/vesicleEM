@@ -1,7 +1,10 @@
+res: [30, 8, 8]
+
 mask_folder: "/data/projects/weilab/dataset/hydra/mask_mip1/png/"
 mask_bbox_folder: "/data/projects/weilab/dataset/hydra/mask_mip1/bbox/"
 mask_template: "Neuron_1_240409_ENDO_no bridge_no ecto.vsseg_export_s{:04d}_Y%d_X%d.png"
 mask_meta: "/data/projects/weilab/dataset/hydra/mask_mip1/meta.txt"
+mask_id: "/data/projects/weilab/dataset/hydra/mask_mip1/neuron_id.txt"
 mask_size: [1830, 8192, 8192]
 
 vesicle_pred_path_big: "/data/projects/weilab/hydra/2024_08_19/tile_{:d}-{:d}/%d-%d_pred.h5"

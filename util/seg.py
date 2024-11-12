@@ -1,4 +1,24 @@
 import numpy as np
+from .bbox import compute_bbox_all
+
+def seg_to_rgb(seg):
+    """
+    Convert a segmentation map to an RGB image.
+
+    Args:
+        seg (numpy.ndarray): The input segmentation map.
+
+    Returns:
+        numpy.ndarray: The RGB image representation of the segmentation map.
+
+    Notes:
+        - The function converts a segmentation map to an RGB image, where each unique segment ID is assigned a unique color.
+        - The RGB image is represented as a numpy array.
+    """
+    return np.stack([seg // 65536, seg // 256, seg % 256], axis=2).astype(
+        np.uint8
+    )
+
 
 def rgb_to_seg(seg):
     """
@@ -14,7 +34,9 @@ def rgb_to_seg(seg):
         - The function converts an RGB image to a segmentation map, where each unique color is assigned a unique segment ID.
         - The segmentation map is represented as a numpy array.
     """
-    if seg.ndim == 2 or seg.shape[-1] == 1:
+    if seg.ndim == 2:
+        return seg
+    elif seg.shape[-1] == 1:
         return np.squeeze(seg)
     elif seg.ndim == 3:  # 1 rgb image
         if (seg[:, :, 1] != seg[:, :, 2]).any() or (
@@ -68,23 +90,35 @@ def rgb_to_seg(seg):
             + seg[:, :, :, 2].astype(np.uint32)
         )
 
+def seg_downsample_all_id(seg, ratio):
+    seg_ds = seg[::ratio[0], ::ratio[1], ::ratio[2]]
+
+    bbox = compute_bbox_all(seg)    
+    id_ds = np.unique(seg_ds)
+    to_add = np.in1d(bbox[:,0], id_ds, invert=True)
+    if to_add.sum() != 0:
+        import pdb;pdb.set_trace()
+        # some seg ids are lost        
+        add_id = bbox[to_add, 0]
+        add_loc = np.round(((bbox[to_add,1::2] + bbox[to_add,2::2]) /2) / ratio).astype(int)
+        seg_ds[add_loc[:,0], add_loc[:,1], add_loc[:,2]] = add_id        
+    return seg_ds
+    
 
 def read_vast_seg(fn):
     a = open(fn).readlines()
     # remove comments
     st_id = 0
-    while a[st_id][0] in ["%", "\\"]:
+    while a[st_id][0] in ["%", "\n"]:
         st_id += 1
-    
-    st_id -= 1
     # remove segment name
-    out = np.zeros((len(a) - st_id - 1, 24), dtype=int)
-    name = [None] * (len(a) - st_id - 1)
-    for i in range(st_id + 1, len(a)):
-        out[i - st_id - 1] = np.array(
+    out = np.zeros((len(a) - st_id, 24), dtype=int)
+    name = [None] * (len(a) - st_id)
+    for i in range(st_id, len(a)):
+        out[i - st_id] = np.array(
             [int(x) for x in a[i][: a[i].find('"')].split(" ") if len(x) > 0]
         )
-        name[i - st_id - 1] = a[i][a[i].find('"') + 1 : a[i].rfind('"')]
+        name[i - st_id] = a[i][a[i].find('"') + 1 : a[i].rfind('"')]
     return out, name
 
 def vast_meta_relabel(

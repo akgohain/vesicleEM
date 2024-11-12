@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 
 from util import *
-from neuron_mask import segid_to_bbox
+from neuron_mask import neuron_id_to_bbox, neuron_name_to_id
 
 def ng_layer(data, res, oo=[0, 0, 0], tt="segmentation"):
     # input zyx -> display xyz
@@ -32,14 +32,15 @@ if opt[0] == '0':
         res = np.array([32,32,30])
         with viewer.txn() as s:
             s.layers['image'] = neuroglancer.ImageLayer(source=D0) 
-        
-        def dsp_seg(name, seg_ids):
-            for seg_id in seg_ids:
-                bb = segid_to_bbox(conf, seg_id)        
+        conf = read_yml('conf/param.yml')
+        def dsp_seg(name, neuron_names):
+            for neuron_name in neuron_names:
+                neuron_id = neuron_name_to_id(conf, neuron_name)
+                bb = neuron_id_to_bbox(conf, neuron_id)        
                 oset = bb[::2]//[1,4,4]        
-                mask = read_h5(f'{conf["result_folder"]}/{name}_{seg_id}_30-32-32.h5')
+                mask = read_h5(f'{conf["result_folder"]}/{name}_{neuron_name}_30-32-32.h5')
                 with viewer.txn() as s:
                     s.layers.append(name='mask',layer=ng_layer(mask, res, oo=oset[::-1]))
-        dsp_seg('neuron', [16])
-        dsp_seg('vesicle_big', [16])
+        dsp_seg('neuron', ['KR5', 'KR6'])
+        #dsp_seg('vesicle_big', [16])
     print(viewer)

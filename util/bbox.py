@@ -1,6 +1,28 @@
 import os
 import numpy as np
 
+def merge_bbox(bbox_a, bbox_b):
+    """
+    Merge two bounding boxes.
+
+    Args:
+        bbox_a (numpy.ndarray): The first bounding box.
+        bbox_b (numpy.ndarray): The second bounding box.
+
+    Returns:
+        numpy.ndarray: The merged bounding box. Each row: [ymin,ymax,xmin,xmax,count(optional)]    
+    """
+    num_element = len(bbox_a) // 2 * 2
+    out = bbox_a
+    out[: num_element: 2] = np.minimum(bbox_a[: num_element: 2], 
+                                       bbox_b[: num_element: 2])
+    out[1: num_element: 2] = np.maximum(bbox_a[1: num_element: 2], 
+                                        bbox_b[1: num_element: 2])
+    if num_element != len(bbox_a): 
+        out[-1] = bbox_a[-1] + bbox_b[-1]
+    
+    return out
+
 def compute_bbox(seg, do_count=False):
     """
     Compute the bounding box of a binary segmentation.

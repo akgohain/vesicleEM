@@ -1,9 +1,103 @@
 import os, sys
+import glob
 import numpy as np
 import imageio
 from scipy.ndimage import zoom
 import yaml
 import h5py
+from .seg import rgb_to_seg, seg_to_rgb
+from tqdm import tqdm
+import argparse
+
+def get_arguments():
+    """
+    The function `get_arguments()` is used to parse command line arguments for the evaluation on AxonEM.
+    :return: The function `get_arguments` returns the parsed command-line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description="argument parser"
+    )
+    parser.add_argument(
+        "-t",
+        "--task",
+        type=str,
+        help="task",
+        default="",
+    )
+    parser.add_argument(
+        "-if",
+        "--input-folder",
+        type=str,
+        help="path to input folder",
+        default="",
+    )
+    parser.add_argument(
+        "-i",
+        "--input-file",
+        type=str,
+        help="path to input file",
+        default="",
+    )
+    parser.add_argument(
+        "-of",
+        "--output-folder",
+        type=str,
+        help="path to output folder",
+        default="",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-file",
+        type=str,
+        help="path to output file",
+        default="",
+    )
+    parser.add_argument(
+        "-p",
+        "--param",
+        type=str,
+        help="extra parameter",
+        default="",
+    )
+    parser.add_argument(
+        "-r",
+        "--ratio",
+        type=str,
+        help="ratio",
+        default="1,1,1",
+    )
+    parser.add_argument(
+        "-n",
+        "--neuron",
+        type=str,
+        help="neuron name",
+        default="",
+    )
+    parser.add_argument(
+        "-v",
+        "--vesicle",
+        type=str,
+        help="big or small vesicle",
+        default="big",
+    )
+    parser.add_argument(
+        "-ji",
+        "--job-id",
+        type=int,        
+        default=0,
+    )
+    parser.add_argument(
+        "-jn",
+        "--job-num",
+        type=int,        
+        default=1,
+    )
+    args = parser.parse_args()
+    if args.param != "":
+        args.param = str2dict(args.param)
+    args.ratio = [int(x) for x in args.ratio.split(',')]
+    return args
+
 
 def mkdir(foldername, opt=""):
     """
@@ -81,12 +175,52 @@ def read_image(filename, image_type="image", ratio=None, resize_order=None, data
             image = image[obj]
     return image
 
+def get_file_number(filename, index):
+    return len(filename) if isinstance(filename, list) else len(index)
 
+def get_filename(filename, index, x):
+    return filename[x] if isinstance(filename, list) else filename % index[x]
 
+def read_image_folder(
+    filename, index=None, image_type="image", ratio=None, resize_order=None, crop=None, no_tqdm=False
+):
+    """
+    Read a folder of images.
+
+    Args:
+        filename (str or list): The path to the image folder or a list of image file paths.
+        index (int or list, optional): The index or indices of the images to read. Defaults to None.
+        image_type (str, optional): The type of image to read. Defaults to "image".
+        ratio (list, optional): The downsampling ratio for the images. Defaults to None.
+        resize_order (int, optional): The order of interpolation for scaling. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: The folder of images.
+
+    Raises:
+        None
+    """
+    if ratio is None:
+        ratio = [1, 1]
+    # either filename or index is a list
+    if '*' in filename:
+        filename = sorted(glob.glob(filename))
+    num_image = get_file_number(filename, index)    
+    im0 = read_image(get_filename(filename, index, 0), image_type, ratio, resize_order, crop=crop)
+    sz = list(im0.shape)
+    out = np.zeros([num_image] + sz, im0.dtype)
+    out[0] = im0
+    for i in tqdm(range(1, num_image), disable=no_tqdm):
+        out[i] = read_image(get_filename(filename, index, i), image_type, ratio, resize_order, crop=crop)
+    return out
         
-def get_filenames(folder_name, output_name):            
+def get_filenames(folder_name, output_name=None):
     fns = [x[x.rfind('/')+1:x.rfind('.')] for x in glob(f'{folder_name}/*.png')]
-    write_txt(f'{folder_name}/{output_name}', fns)        
+    if output_name is None:
+        if folder_name[-1] == '/':
+            folder_name = folder_name[:-1]
+        output_name =f'{folder_name}.txt'
+    write_txt(output_name, fns)        
 
 
 
@@ -104,24 +238,6 @@ def read_txt(filename):
     with open(filename, "r") as a:
         content = a.readlines()
     return content
-def seg_to_rgb(seg):
-    """
-    Convert a segmentation map to an RGB image.
-
-    Args:
-        seg (numpy.ndarray): The input segmentation map.
-
-    Returns:
-        numpy.ndarray: The RGB image representation of the segmentation map.
-
-    Notes:
-        - The function converts a segmentation map to an RGB image, where each unique segment ID is assigned a unique color.
-        - The RGB image is represented as a numpy array.
-    """
-    return np.stack([seg // 65536, seg // 256, seg % 256], axis=2).astype(
-        np.uint8
-    )
-
 def write_image(filename, image, image_type="image"):
     if image_type=='seg':
         image = seg_to_rgb(image)
@@ -212,3 +328,33 @@ def write_h5(filename, data, dataset="main"):
         )
         ds[:] = data
     fid.close()
+
+
+def get_volume_size_h5(filename, dataset_name=None):
+    """
+    The function `get_volume_size_h5` returns the size of a dataset in an HDF5 file, or the size of the
+    first dataset if no dataset name is provided.
+
+    :param filename: The filename parameter is the name of the HDF5 file that you want to read
+    :param dataset_name: The parameter `dataset_name` is an optional argument that specifies the name of
+    the dataset within the HDF5 file. If it is not provided, the function will retrieve the first
+    dataset in the file and return its shape as the volume size
+    :return: the size of the volume as a list.
+    """
+    volume_size = []
+    fid = h5py.File(filename, "r")
+    if dataset_name is None:
+        dataset_name = fid.keys() if sys.version[0] == "2" else list(fid)
+        if len(dataset_name) > 0:
+            volume_size = fid[dataset_name[0]].shape
+    fid.close()
+    return volume_size
+
+def str2dict(input):
+    dict ={}
+    for x in input.split(','):
+        y= x.split(":")
+        if y[1].isnumeric():
+            y[1] = float(y[1])
+        dict[y[0]] = y[1]
+    return dict
