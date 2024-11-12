@@ -5,8 +5,6 @@ from neuron_mask import neuron_id_to_neuron, neuron_id_to_bbox, neuron_to_id_nam
 import statistics
 import cc3d
 
-
-
 def crop_to_tile(conf, opt='big', job_id=0, job_num=1):
     pad_z, pad_y, pad_x = conf['vesicle_pad']
     for zz in conf['vesicle_zchunk'][job_id::job_num]:
@@ -102,24 +100,26 @@ def neuron_id_to_vesicle(conf, neuron_id, ratio=[1,4,4], opt='big', output_file=
                         acc_id=True, output_file=output_file, mask=mask)
     return out
 
-def vesicle_vast_process(seg_file, meta_file):    
+def vesicle_vast_process(seg_file, meta_file, dust_size=50):    
     _, meta_n = read_vast_seg(meta_file)
     ves = read_h5(seg_file)
     
-    
     sv_id = [i for i,x in enumerate(meta_n) if x=='SV']    
     out_sv = cc3d.connected_components(ves==sv_id, connectivity=6)
-    ves[ves==sv_id] = 0
     
     
     max_id = ves.max()
     lv_id = [i for i,x in enumerate(meta_n) if x=='LV']
     out_lv = cc3d.connected_components(ves==lv_id, connectivity=6)
+    # remove small ones
+    out_lv = seg_remove_small(out_lv, dust_size)
+    
     out_lv[out_lv > 0] += max_id
+    ves[ves==sv_id] = 0
     ves[ves==lv_id] = 0
     out_lv[ves > 0] = ves[ves > 0]
     
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
     return out_sv, out_lv
 
     

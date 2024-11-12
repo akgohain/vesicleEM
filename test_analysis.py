@@ -3,6 +3,7 @@ import numpy as np
 import h5py
 import yaml
 
+
 def read_h5(filename, dataset=None):
     """
     Read data from an HDF5 file.
@@ -64,7 +65,6 @@ def neuron_name_to_id(name):
     return [dict[x] for x in name]    
 
 names= ['KR5','KR6']
-
 sid = neuron_name_to_id(names)
 bbox = np.loadtxt('/data/projects/weilab/dataset/hydra/mask_mip1/bbox.txt').astype(int)
 bb1 = bbox[bbox[:,0]==sid[0], 1:][0]//[1,1,4,4,4,4]
@@ -76,8 +76,8 @@ D0= '/data/projects/weilab/dataset/hydra/results/'
 out = np.zeros(bb_all_sz, np.uint8)
 out[bb1[0]-bb_all[0]:bb1[1]-bb_all[0]+1, \
     bb1[2]-bb_all[2]:bb1[3]-bb_all[2]+1, \
-    bb1[4]-bb_all[4]:bb1[5]-bb_all[4]+1] = read_h5(f'{D0}neuron_{names[0]}_30-32-32.h5')
+    bb1[4]-bb_all[4]:bb1[5]-bb_all[4]+1] = sid[0] * read_h5(f'{D0}neuron_{names[0]}_30-32-32.h5')
 
 out[bb2[0]-bb_all[0]:bb2[1]-bb_all[0]+1, \
     bb2[2]-bb_all[2]:bb2[3]-bb_all[2]+1, \
-    bb2[4]-bb_all[4]:bb2[5]-bb_all[4]+1] = read_h5(f'{D0}neuron_{names[1]}_30-32-32.h5')
+    bb2[4]-bb_all[4]:bb2[5]-bb_all[4]+1] = sid[1] * read_h5(f'{D0}neuron_{names[1]}_30-32-32.h5')

@@ -25,7 +25,7 @@ def get_arguments():
         default="",
     )
     parser.add_argument(
-        "-if",
+        "-ir",
         "--input-folder",
         type=str,
         help="path to input folder",
@@ -39,7 +39,7 @@ def get_arguments():
         default="",
     )
     parser.add_argument(
-        "-of",
+        "-or",
         "--output-folder",
         type=str,
         help="path to output folder",
@@ -70,7 +70,7 @@ def get_arguments():
         "-n",
         "--neuron",
         type=str,
-        help="neuron name",
+        help="neuron name or id",
         default="",
     )
     parser.add_argument(
@@ -95,6 +95,7 @@ def get_arguments():
     args = parser.parse_args()
     if args.param != "":
         args.param = str2dict(args.param)
+    args.neuron = args.neuron.split(',')        
     args.ratio = [int(x) for x in args.ratio.split(',')]
     return args
 
@@ -204,7 +205,7 @@ def read_image_folder(
         ratio = [1, 1]
     # either filename or index is a list
     if '*' in filename:
-        filename = sorted(glob.glob(filename))
+        filename = sorted(glob.glob(filename))    
     num_image = get_file_number(filename, index)    
     im0 = read_image(get_filename(filename, index, 0), image_type, ratio, resize_order, crop=crop)
     sz = list(im0.shape)

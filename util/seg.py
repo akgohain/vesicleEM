@@ -104,7 +104,40 @@ def seg_downsample_all_id(seg, ratio):
         seg_ds[add_loc[:,0], add_loc[:,1], add_loc[:,2]] = add_id        
     return seg_ds
     
+def seg_remove_id(seg, bid, invert=False):
+    """
+    Remove segments from a segmentation map based on their size.
 
+    Args:
+        seg (numpy.ndarray): The input segmentation map.
+        bid (numpy.ndarray): The segment IDs to be removed. Defaults to None.
+        invert (Boolean, optional): Invert the result.
+
+    Returns:
+        numpy.ndarray: The updated segmentation map.
+
+    Notes:
+        - The function removes segments from the segmentation map based on their size.
+        - Segments with a size below the specified threshold are removed.
+        - If `bid` is provided, only the specified segment IDs are removed.
+    """    
+    seg_m = seg.max()
+    bid = np.array(bid)
+    bid = bid[bid <= seg_m]
+    if invert:
+        rl = np.zeros(seg_m + 1).astype(seg.dtype)
+        rl[bid] = bid
+    else:
+        rl = np.arange(seg_m + 1).astype(seg.dtype)
+        rl[bid] = 0
+    return rl[seg]
+
+def seg_remove_small(seg, threshold=100, invert=False):
+    uid, uc = np.unique(seg, return_counts=True)
+    bid = uid[uc < threshold]
+    seg = seg_remove_id(seg, bid, invert)
+    return seg
+    
 def read_vast_seg(fn):
     a = open(fn).readlines()
     # remove comments

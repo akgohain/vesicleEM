@@ -66,12 +66,12 @@ def merge_bbox_tile(conf, ratio=1, do_return=False):
     else:
         np.savetxt(f'{bbox_folder[:-1]}_init.txt', out, '%d')
 
-def neuron_id_to_bbox(conf, neuron_id):
+def neuron_id_to_bbox(conf, neuron_id, neuron_name=''):
     bbox = np.loadtxt(f"{conf['mask_bbox_folder'][:-1]}.txt").astype(int)
     # find the bounding box of the input id
     bb = bbox[bbox[:,0] == neuron_id, 1:7][0]
     #print(f'Neuron {neuron_id} bbox: {bb}')
-    print(f'Neuron {neuron_id} bbox: {bb[::2]}')
+    print(f'Neuron {neuron_id} bbox: {neuron_name} {bb[::2][::-1]}: {[2,2,1]*bb[::2][::-1]} - {[2,2,1]*bb[1::2][::-1]+[1,1,0]}')
     #print(f'Neuron {neuron_id} bbox: {bb[1::2]-bb[::2]+1}')
     return bb
 
@@ -113,18 +113,19 @@ if __name__ == "__main__":
         merge_bbox_tile(conf, 4)
     elif args.task == 'neuron-bbox-print':
         # print bbox for the neuron
-        # python neuron_mask.py -t neuron-bbox-print -n 17
-        neuron_id, neuron_name = neuron_to_id_name(conf, args.neuron)
-        print(neuron_id, neuron_name)
-        neuron_id_to_bbox(conf, neuron_id)
+        # python neuron_mask.py -t neuron-bbox-print -n 11,1,2,5,6,17,18,26,62
+        for neuron in args.neuron:
+            neuron_id, neuron_name = neuron_to_id_name(conf, neuron)            
+            neuron_id_to_bbox(conf, neuron_id, neuron_name)
     elif args.task == 'neuron-mask':
         # generate neuron mask from the neuron id or name
         # python neuron_mask.py -t neuron-mask -n 38 -r 1,4,4
-        sn = '-'.join([str(x) for x in np.array(args.ratio) * conf['res']]) 
-        neuron_id, neuron_name = neuron_to_id_name(conf, args.neuron)
-        output_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{sn}.h5'
-        if not os.path.exists(output_file):
-            mask = neuron_id_to_neuron(conf, neuron_id, args.ratio)
-            write_h5(output_file, mask)
-        else:
-            print('Already exists:', output_file)
+        sn = '-'.join([str(x) for x in np.array(args.ratio) * conf['res']])         
+        for neuron in args.neuron:
+            neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
+            output_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{sn}.h5'
+            if not os.path.exists(output_file):
+                mask = neuron_id_to_neuron(conf, neuron_id, args.ratio)
+                write_h5(output_file, mask)
+            else:
+                print('Already exists:', output_file)
