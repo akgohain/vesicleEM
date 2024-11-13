@@ -75,7 +75,7 @@ def neuron_id_to_bbox(conf, neuron_id, neuron_name=''):
     #print(f'Neuron {neuron_id} bbox: {bb[1::2]-bb[::2]+1}')
     return bb
 
-def neuron_id_to_neuron(conf, neuron_id, ratio=[1,4,4]):    
+def neuron_id_to_neuron(conf, neuron_id, ratio=[1,4,4], output_file=None):    
     # read in the bounding box
     bb = neuron_id_to_bbox(conf, neuron_id)
     
@@ -89,12 +89,15 @@ def neuron_id_to_neuron(conf, neuron_id, ratio=[1,4,4]):
     bb[:2] = bb[:2] // ratio[0]
     bb[2:4] = bb[2:4] // ratio[1]
     bb[4:] = bb[4:] // ratio[2]
-    # import pdb;pdb.set_trace()    
-    out = read_tile_image_by_bbox(filenames, bb[0], bb[1]+1, bb[2], bb[3]+1, bb[4], bb[5]+1, 
-                           tile_sz, tile_st, tile_type="seg", tile_ratio=[1./ratio[1], 1./ratio[2]], zstep=ratio[0])
-    
+    # import pdb;pdb.set_trace()
     rl = vast_meta_relabel(conf['mask_meta']).astype(np.uint8)
-    out = (rl[out] == neuron_id).astype(np.uint8)
+    gid = rl==neuron_id
+    rl[:] = 0
+    rl[gid] = 1
+    rl = rl.astype(np.uint8)
+    out = read_tile_image_by_bbox(filenames, bb[0], bb[1]+1, bb[2], bb[3]+1, bb[4], bb[5]+1, \
+                           tile_sz, tile_st, tile_type="seg", tile_ratio=[1./ratio[1], 1./ratio[2]], \
+                               zstep=ratio[0], output_file=output_file, relabel=rl)        
     return out
 
 if __name__ == "__main__":
@@ -119,13 +122,12 @@ if __name__ == "__main__":
             neuron_id_to_bbox(conf, neuron_id, neuron_name)
     elif args.task == 'neuron-mask':
         # generate neuron mask from the neuron id or name
-        # python neuron_mask.py -t neuron-mask -n 38 -r 1,4,4
-        sn = '-'.join([str(x) for x in np.array(args.ratio) * conf['res']])         
+        # python neuron_mask.py -t neuron-mask -n 1
+        sn = arr_to_str(np.array(args.ratio) * conf['res'])
         for neuron in args.neuron:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             output_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{sn}.h5'
             if not os.path.exists(output_file):
-                mask = neuron_id_to_neuron(conf, neuron_id, args.ratio)
-                write_h5(output_file, mask)
+                neuron_id_to_neuron(conf, neuron_id, args.ratio, output_file)                
             else:
                 print('Already exists:', output_file)

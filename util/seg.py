@@ -97,7 +97,7 @@ def seg_downsample_all_id(seg, ratio):
     id_ds = np.unique(seg_ds)
     to_add = np.in1d(bbox[:,0], id_ds, invert=True)
     if to_add.sum() != 0:
-        import pdb;pdb.set_trace()
+        # import pdb;pdb.set_trace()
         # some seg ids are lost        
         add_id = bbox[to_add, 0]
         add_loc = np.round(((bbox[to_add,1::2] + bbox[to_add,2::2]) /2) / ratio).astype(int)
@@ -137,7 +137,7 @@ def seg_remove_small(seg, threshold=100, invert=False):
     bid = uid[uc < threshold]
     seg = seg_remove_id(seg, bid, invert)
     return seg
-    
+
 def read_vast_seg(fn):
     a = open(fn).readlines()
     # remove comments

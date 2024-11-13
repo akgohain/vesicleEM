@@ -127,6 +127,8 @@ def read_yml(filename):
         data = yaml.safe_load(file)
     return data
 
+def arr_to_str(arr):
+    return '-'.join([str(x) for x in arr])
 
 def read_image(filename, image_type="image", ratio=None, resize_order=None, data_type="2d", crop=None):
     """
@@ -206,13 +208,18 @@ def read_image_folder(
     # either filename or index is a list
     if '*' in filename:
         filename = sorted(glob.glob(filename))    
-    num_image = get_file_number(filename, index)    
-    im0 = read_image(get_filename(filename, index, 0), image_type, ratio, resize_order, crop=crop)
+    num_image = get_file_number(filename, index)
+    
+    i = 0
+    while not os.path.exists(get_filename(filename, index, i)):
+        i += 1        
+    im0 = read_image(get_filename(filename, index, i), image_type, ratio, resize_order, crop=crop)
     sz = list(im0.shape)
-    out = np.zeros([num_image] + sz, im0.dtype)
-    out[0] = im0
-    for i in tqdm(range(1, num_image), disable=no_tqdm):
-        out[i] = read_image(get_filename(filename, index, i), image_type, ratio, resize_order, crop=crop)
+    out = np.zeros([num_image] + sz, im0.dtype)    
+    for i in tqdm(range(num_image), disable=no_tqdm):
+        fn = get_filename(filename, index, i)
+        if os.path.exists(fn):
+            out[i] = read_image(fn, image_type, ratio, resize_order, crop=crop)
     return out
         
 def get_filenames(folder_name, output_name=None):

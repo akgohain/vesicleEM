@@ -41,6 +41,8 @@ if opt[0] == '0':
                 mask = read_h5(f'{conf["result_folder"]}/{name}_{neuron_name}_30-32-32.h5')
                 with viewer.txn() as s:
                     s.layers.append(name='mask',layer=ng_layer(mask, res, oo=oset[::-1]))
-        dsp_seg('neuron', ['KR5', 'KR6'])
-        #dsp_seg('vesicle_big', [16])
+        #dsp_seg('neuron', ['KR5', 'KR6'])
+        dsp_seg('neuron', ['KR4'])
+        dsp_seg('sv', ['KR4'])
+        dsp_seg('lv', ['KR4'])
     print(viewer)
