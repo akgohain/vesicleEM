@@ -54,3 +54,5 @@ elif opt == '2.1':
         fn = bb[bb.rfind('/')+1:bb.rfind('_')]        
         print(f'python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i {fn}_8nm.h5,VAST_segmentation_metadata_{fn}.txt -o sv_{fn},lv_{fn} -r 1,4,4')
         """
+elif opt == '3': # check process
+    

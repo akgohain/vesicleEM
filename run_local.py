@@ -27,32 +27,13 @@ if __name__ == "__main__":
         data = read_image_folder(image_template, image_index, \
                         image_type=image_type, ratio=ratio, output_file=args.output_file, dtype=dt)
     elif args.task == 'downsample':
-        # python run_local.py -t downsample -i /data/projects/weilab/dataset/hydra/results/neuron_NET11_30-8-8.h5 -r 1,4,4 -o neuron_NET11_30-32-32.h5 -p "chunk:10"
-        sn = os.path.join(os.path.dirname(args.input_file), args.output_file)
-        if 'chunk' in args.param:
-            # read in chunks
-            chunk_num = int(args.param['chunk'])            
-            
-            fid_in = h5py.File(args.input_file, 'r')
-            fid_in_data = fid_in['main']
-            fid_out = h5py.File(args.output_file, "w")
-            vol_sz = np.array(fid_in_data.shape) // args.ratio
-            result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype)
-            num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
-            for z in range(chunk_num):
-                tmp = read_h5_chunk(fid_in_data, z, chunk_num)[::args.ratio[0],::args.ratio[1],::args.ratio[2]]
-                result[z*num_z:(z+1)*num_z] = tmp
-            fid_in.close()
-            fid_out.close()
-        else:
-            # read in the volume
-            vol = read_h5(args.input_file)
-            vol = vol[::args.ratio[0], ::args.ratio[1], ::args.ratio[2]]
-            write_h5(sn, vol)
+        # python run_local.py -t downsample -i /data/projects/weilab/dataset/hydra/results/neuron_NET11_30-8-8.h5 -r 1,4,4 -o neuron_NET11_30-32-32.h5
+        output_file = os.path.join(os.path.dirname(args.input_file), args.output_file)
+        vol_downsample_chunk(args.input_file, args.ratio, output_file, args.param['job_num'])        
     elif args.task == 'vol-shape':
         # python run_local.py -t vol-shape -i /data/projects/weilab/dataset/hydra/results/sv_KR4_30-32-32.h5
         if '.h5' in args.input_file:
-            sz = get_volume_size_h5(args.input_file)
+            sz = get_vol_shape(args.input_file)
         else:
             data = read_h5(args.input_file)
             sz = data.shape    

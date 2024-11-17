@@ -1,27 +1,7 @@
 import os
 import numpy as np
 
-def merge_bbox(bbox_a, bbox_b):
-    """
-    Merge two bounding boxes.
 
-    Args:
-        bbox_a (numpy.ndarray): The first bounding box.
-        bbox_b (numpy.ndarray): The second bounding box.
-
-    Returns:
-        numpy.ndarray: The merged bounding box. Each row: [ymin,ymax,xmin,xmax,count(optional)]    
-    """
-    num_element = len(bbox_a) // 2 * 2
-    out = bbox_a
-    out[: num_element: 2] = np.minimum(bbox_a[: num_element: 2], 
-                                       bbox_b[: num_element: 2])
-    out[1: num_element: 2] = np.maximum(bbox_a[1: num_element: 2], 
-                                        bbox_b[1: num_element: 2])
-    if num_element != len(bbox_a): 
-        out[-1] = bbox_a[-1] + bbox_b[-1]
-    
-    return out
 
 def compute_bbox(seg, do_count=False):
     """
@@ -217,6 +197,35 @@ def compute_bbox_all_3d(seg, do_count=False, uid=None):
 
     return out[np.all(out != -1, axis=-1)].astype(np.uint32)
 
+
+def merge_bbox(bbox_a, bbox_b):
+    """
+    Merge two bounding boxes.
+
+    Args:
+        bbox_a (numpy.ndarray): The first bounding box.
+        bbox_b (numpy.ndarray): The second bounding box.
+
+    Returns:
+        numpy.ndarray: The merged bounding box. Each row: [ymin,ymax,xmin,xmax,count(optional)]    
+    """
+    num_element = len(bbox_a) // 2 * 2
+    out = bbox_a.copy()
+    out[: num_element: 2] = np.minimum(bbox_a[: num_element: 2], 
+                                       bbox_b[: num_element: 2])
+    out[1: num_element: 2] = np.maximum(bbox_a[1: num_element: 2], 
+                                        bbox_b[1: num_element: 2])
+    if num_element != len(bbox_a): 
+        out[-1] = bbox_a[-1] + bbox_b[-1]
+    
+    return out
+
+def merge_bbox_one_matrix(bbox):
+    out = bbox[0].copy()
+    for i in range(1, bbox.shape[0]):
+        out = merge_bbox(out, bbox[i])
+    return out
+        
 
 def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
     """

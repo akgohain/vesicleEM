@@ -130,39 +130,63 @@ def neuron_id_to_vesicle(conf, neuron_id, ratio=[1,4,4], opt='big', output_file=
         mask_file.close()
     return out
 
-def vesicle_vast_process(seg_file, meta_file, dust_size=50, do_lv=False, do_sv=False):
-    out_sv, out_lv = None, None
-    if do_lv or do_sv:
-        _, meta_n = read_vast_seg(meta_file)
-        relabel = vast_meta_relabel(meta_file)
-        ves = relabel[read_h5(seg_file)]
-         
-        if do_sv:
-            sv_id = [i for i,x in enumerate(meta_n) if x=='SV']    
-            # connected component on each slice
+def vesicle_vast_small_vesicle(seg_file, meta_file, output_file=None):
+    _, meta_n = read_vast_seg(meta_file)
+    relabel = vast_meta_relabel(meta_file)
+    if output_file is None or not os.path.exists(output_file):
+        sv_id = [i for i,x in enumerate(meta_n) if x=='SV']        
+        # connected component on each slice
+        if output_file is None:
+            ves = read_h5(seg_file)
             out_sv = np.zeros(ves.shape, np.uint16)
-            max_id = 0
-            for z in range(ves.shape[0]):
-                if (ves[z]==sv_id).any():
-                    out_sv[z] = cc3d.connected_components(ves[z]==sv_id, connectivity=4)
-                    mm = out_sv[z].max()
-                    out_sv[z][out_sv[z] > 0] += max_id
-                    max_id += mm
-                
-        if do_lv:   
-            max_id = ves.max()
-            lv_id = [i for i,x in enumerate(meta_n) if x=='LV']
-            out_lv = cc3d.connected_components(ves==lv_id, connectivity=6)
+        else:
+            ves_fid = h5py.File(seg_file, 'r')
+            ves = ves_fid['main']
+            fid = h5py.File(output_file, 'w')
+            out_sv = fid.create_dataset('main', ves.shape, np.uint16)
+        max_id = 0
+        for z in range(ves.shape[0]):
+            slice = relabel[np.array(ves[z])]==sv_id
+            if slice.any():
+                slice_cc = cc3d.connected_components(slice, connectivity=4)
+                mm = slice_cc.max()                                
+                slice_cc[slice_cc > 0] += max_id
+                out_sv[z] = slice_cc
+                max_id += mm
+        if output_file is not None:
+            ves_fid.close()
+            fid.close()
+        else:
+            return out_sv
+
+def vesicle_vast_big_vesicle(seg_file, meta_file, dust_size=50, output_file=None, chunk_num=1):
+    meta_d, meta_n = read_vast_seg(meta_file)
+    relabel = vast_meta_relabel(meta_file)    
+    if output_file is None or not os.path.exists(output_file):
+        sv_id = [i for i,x in enumerate(meta_n) if x=='SV']
+        lv_id = [i for i,x in enumerate(meta_n) if x=='LV']        
+        if output_file is None or chunk_num==1: # direct volume            
+            ves = read_h5(seg_file)            
+            max_id = ves.max()        
+            ves_cc = cc3d.connected_components(ves==lv_id, connectivity=6)
             # remove small ones
-            out_lv = seg_remove_small(out_lv, dust_size)    
-            out_lv[out_lv > 0] += max_id
+            ves_cc = seg_remove_small(ves_cc, dust_size)    
+            ves_cc[ves_cc > 0] += max_id
             ves[ves==sv_id] = 0
             ves[ves==lv_id] = 0
-            out_lv[ves > 0] = ves[ves > 0]
-            #import pdb;pdb.set_trace() 
+            ves_cc[ves > 0] = ves[ves > 0]    
+            ves_cc = ves_cc.astype(np.uint16)
+            if output_file is not None:
+                write_h5(output_file, ves_cc)
+            else:
+                return ves_cc
+        else:
+            seg_func = lambda x: relabel[x]==lv_id            
+            # write cc into output file
+            seg_cc_chunk(seg_file, output_file, np.uint16, seg_func, chunk_num)
+            seg_rm = [sv_id, lv_id]
+            seg_add_chunk(output_file, chunk_num, 'all', meta_d[-1,0], seg_file, seg_rm)            
             
-    return out_sv, out_lv
-    
     
 if __name__ == "__main__":
     conf = read_yml('conf/param.yml')
@@ -207,26 +231,19 @@ if __name__ == "__main__":
         suffix = arr_to_str(conf['res'])        
         sv_file = f'{sv_file}_{suffix}.h5'
         lv_file = f'{lv_file}_{suffix}.h5'
+        chunk_num = args.param['job_num']
                 
-        out_sv, out_lv = vesicle_vast_process(seg_file, meta_file, \
-                        do_lv=not os.path.exists(lv_file), do_sv=not os.path.exists(sv_file))
-        if out_sv is not None:
-            write_h5(sv_file, out_sv)
-        if out_lv is not None:
-            write_h5(lv_file, out_lv)        
-        
+        vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
+        vesicle_vast_big_vesicle(seg_file, meta_file, \
+                        output_file=lv_file, chunk_num=chunk_num)
+                
         if max(args.ratio) != 1:
             # large vesicle direct downsample
-            suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])
-            if not os.path.exists(lv_file.replace(suffix, suffix2)):
-                sv_file2 = sv_file.replace(suffix, suffix2)
-                lv_file2 = lv_file.replace(suffix, suffix2)
-                if not os.path.exists(sv_file2):
-                    out_sv = seg_downsample_all_id(out_sv, args.ratio)
-                    write_h5(sv_file2, out_sv)
-                if not os.path.exists(lv_file2): 
-                    out_lv = seg_downsample_all_id(out_lv, args.ratio)
-                    write_h5(lv_file2, out_lv)
+            suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])    
+            sv_file2 = sv_file.replace(suffix, suffix2)            
+            seg_downsample_chunk(sv_file, args.ratio, sv_file2, chunk_num)                
+            lv_file2 = lv_file.replace(suffix, suffix2)
+            seg_downsample_chunk(lv_file, args.ratio, lv_file2, chunk_num)                
         
     elif args.task == 'neuron-vesicle-patch':
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -i lv_KR6_30-8-8.h5,vesicle_im_KR6_30-8-8.h5

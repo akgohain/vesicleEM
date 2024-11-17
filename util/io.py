@@ -395,9 +395,9 @@ def write_h5(filename, data, dataset="main"):
     fid.close()
 
 
-def get_volume_size_h5(filename, dataset_name=None):
+def get_vol_shape(filename, dataset_name=None):
     """
-    The function `get_volume_size_h5` returns the size of a dataset in an HDF5 file, or the size of the
+    The function `get_vol_size` returns the size of a dataset in an HDF5 file, or the size of the
     first dataset if no dataset name is provided.
 
     :param filename: The filename parameter is the name of the HDF5 file that you want to read
@@ -423,3 +423,27 @@ def str2dict(input):
             y[1] = float(y[1])
         dict[y[0]] = y[1]
     return dict
+
+    
+def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1):
+    if output_file is None or chunk_num==1:
+        vol = read_h5(input_file)
+        vol = vol[::ratio[0], ::ratio[1], ::ratio[2]]
+        if output_file is None:
+            return vol
+        else:
+            write_h5(output_file, vol)
+    else:
+        fid_in = h5py.File(input_file, 'r')
+        fid_in_data = fid_in[fid_in.keys()[0]]
+        fid_out = h5py.File(output_file, "w")
+        vol_sz = np.array(fid_in_data.shape) // ratio
+        result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype)
+        
+        num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
+        for z in range(chunk_num):
+            tmp = read_h5_chunk(fid_in_data, z, chunk_num)[::ratio[0],::ratio[1],::ratio[2]]
+            result[z*num_z:(z+1)*num_z] = tmp
+            
+        fid_in.close()
+        fid_out.close()
