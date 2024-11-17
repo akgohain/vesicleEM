@@ -1,7 +1,8 @@
 import sys
 import numpy as np
+import h5py
 from util import *
-
+from glob import glob
 opt = sys.argv[1]
 
 if opt == '0':
@@ -18,5 +19,38 @@ if opt == '0':
 elif opt == '1':    
     data = read_yml("/data/projects/weilab/dataset/hydra/mask_mip1/neuron_id.txt")
     kk = np.array(list(data.values()))
+    print(','.join([str(x) for x in kk]))
+    """
     done = [4,15,16,25,36,37,38,39,40,41,52]
     print(sorted(kk[np.in1d(kk, done, invert=True)]))
+    """
+elif opt == '2':    
+    aa = [x for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*') if '.' not in x]
+    for bb in aa:
+        print(f'python run_local.py -t im-to-h5 -p "image_type:seg" -ir "{bb}/*.png"')
+elif opt == '2.1':
+    fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/*.h5'; tdt=np.uint16
+    # fn = '/data/projects/weilab/dataset/hydra/results/vesicle_im_*.h5'; tdt=np.uint8
+    fn = '/data/projects/weilab/dataset/hydra/results/sv_*_30-32-32.h5'; tdt=np.uint16
+    aa = glob(fn)
+    for bb in aa:        
+        # check dtype and shape
+        try:
+            print(bb, read_h5(bb).max())
+            """
+            fid = h5py.File(bb,'r')['main']
+            if fid.dtype != tdt:
+                print(bb, fid.dtype)                
+                if fid.dtype == np.uint32:
+                    vol = read_h5(bb).astype(np.uint16)
+                    write_h5(bb+'_bk', vol)
+                else:
+                    print(f'rm {bb}')
+            """
+        except:
+           print(bb, 'bug') 
+        """
+        # generate proofread volume
+        fn = bb[bb.rfind('/')+1:bb.rfind('_')]        
+        print(f'python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i {fn}_8nm.h5,VAST_segmentation_metadata_{fn}.txt -o sv_{fn},lv_{fn} -r 1,4,4')
+        """

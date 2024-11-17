@@ -53,6 +53,20 @@ def compute_bbox(seg, do_count=False):
     return out
 
 
+def compute_bbox_all_chunk(seg, do_count=False, uid=None, chunk_num=1):
+    if chunk_num == 1:
+        return compute_bbox_all(seg, do_count, uid)
+    else:
+        num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
+        out = []
+        for i in range(chunk_num):
+            chunk_bbox = compute_bbox_all(np.array(seg[i*num_z: (i+1)*num_z]), do_count, uid) 
+            if i == 0:
+                out = chunk_bbox
+            else:
+                out = merge_bbox_two_matrices(out, chunk_bbox)
+        return out 
+    
 def compute_bbox_all(seg, do_count=False, uid=None):
     """
     Compute the bounding boxes of segments in a segmentation map.
@@ -81,6 +95,11 @@ def compute_bbox_all(seg, do_count=False, uid=None):
     else:
         raise "input volume should be either 2D or 3D" 
 
+def compute_bbox_all_2d_chunk(seg, chunk_num=1, do_count=False, uid=None):
+    num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
+    for cid in range(chunk_num):
+        pass
+    
 def compute_bbox_all_2d(seg, do_count=False, uid=None):
     """
     Compute the bounding boxes of 2D instance segmentation.

@@ -2,7 +2,7 @@ import os
 import numpy as np
 import h5py
 from tqdm import tqdm
-from .io import read_image, write_image
+from .io import read_image, write_image, read_h5
 
 def get_tile_name(pattern, row=None, column=None):
     """
@@ -160,9 +160,9 @@ def read_tile_image_by_bbox(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, ti
     return result
 
 
-def read_tile_h5_by_bbox(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
+def read_tile_h5_by_bbox(h5_name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
     cid=-1, dt=np.uint16, zz=[0,0,-1], tile_step=1, zstep=1, acc_id = False, \
-        h5_key='main', no_tqdm=False, output_file=None, tile_type='image', mask=None):
+        h5_key='main', no_tqdm=False, output_file=None, tile_type='image', mask=None, h5_func=None):
     if not isinstance(tile_step, (list,)):
         tile_step = [tile_step, tile_step]
     # zz: extra number of slices in the first and last chunk 
@@ -172,7 +172,13 @@ def read_tile_h5_by_bbox(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
         # return the whole volume
         result = np.zeros((z1-z0, y1-y0, x1-x0), dt)
     else:
-        result = np.zeros((zyx_sz[0], y1-y0, x1-x0), dt) 
+        if '.h5' in output_file:
+            # output as h5
+            fid_out = h5py.File(output_file, 'w')
+            result = fid_out.create_dataset('main', (z1-z0, y1-y0, x1-x0), dtype=dt) 
+        else:
+            # output images for VAST import
+            result = np.zeros((zyx_sz[0] + max(zz[:2]), y1-y0, x1-x0), dt) 
     
     c0 = max(0,x0-zyx0[2]) // zyx_sz[2] # floor
     c1 = (x1-zyx0[2]+zyx_sz[2]-1) // zyx_sz[2] # ceil
@@ -202,10 +208,16 @@ def read_tile_h5_by_bbox(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
             y0a = max(y0, yp0)
             y1a = min(y1, yp1)
             for xid in range(c0, c1):
-                path = h5Name(zid,yid,xid)                
+                path = h5_name(zid,yid,xid)                
                 if os.path.exists(path):
                     print(path)
-                    fid = h5py.File(path,'r')[h5_key]
+                    if h5_func is None:
+                        fid_file= h5py.File(path,'r')
+                        fid = fid_file[h5_key]
+                    else:                        
+                        fid = read_h5(path, h5_key)
+                        fid = h5_func(fid, zid, yid, xid)                        
+                    
                     xp0 = xid * zyx_sz[2] + zyx0[2]
                     xp1 = (xid+1) * zyx_sz[2]+ zyx0[2]                    
                     x0a = max(x0, xp0)
@@ -214,8 +226,7 @@ def read_tile_h5_by_bbox(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
                     # print(z0a, z1a, y0a, y1a, x0a, x1a)
                     # print(zp0, zp1, yp0, yp1, xp0, xp1)
                     if cid==-1:
-                        if len(fid.shape)==3:
-                            # import pdb;pdb.set_trace()
+                        if len(fid.shape)==3:                            
                             tmp = np.array(fid[(z0a - zp0)*zstep : (z1a - zp0)*zstep : zstep, \
                                                (y0a - yp0)*tile_step[0] : (y1a - yp0)*tile_step[0] : tile_step[0], \
                                                (x0a - xp0)*tile_step[1] : (x1a - xp0)*tile_step[1] : tile_step[1]])
@@ -235,18 +246,22 @@ def read_tile_h5_by_bbox(h5Name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
                         tmp[tmp > 0] += mid
                         mid += tmp_max
                         print(mid)
-                    if output_file is None: 
+                    if output_file is None or '.h5' in output_file: 
                         result[z0a-z0:z1a-z0, y0a-y0:y1a-y0, x0a-x0:x1a-x0] = tmp
                     else:
-                        # save to top slices
+                        # save to top slices                        
                         result[:z1a-z0a, y0a-y0:y1a-y0, x0a-x0:x1a-x0] = tmp 
+                    if h5_func is None:
+                        fid_file.close()
         # import pdb;pdb.set_trace()
         if mask is not None:
-            if output_file is None: 
+            if output_file is None or '.h5' in output_file: 
                 result[z0a-z0 : z1a-z0] = result[z0a-z0 : z1a-z0] * np.array(mask[z0a-z0 : z1a-z0])
             else:
                 result[:z1a-z0a] = result[:z1a-z0a] * np.array(mask[z0a-z0 : z1a-z0])                
-        if output_file is not None:
+        if output_file is not None and '.h5' not in output_file:
             for z in range(z0a, z1a):                        
                 write_image(output_file % z, result[z-z0a], tile_type)
+    if '.h5' in output_file:
+        fid_out.close()
     return result

@@ -3,9 +3,6 @@ from util import *
 import numpy as np
 from glob import glob
 
-
-
-
 def neuron_to_id_name(conf, neuron):
     dict = read_yml(conf['mask_id'])
     if neuron.isnumeric():

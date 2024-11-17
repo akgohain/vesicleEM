@@ -48,7 +48,7 @@ def rgb_to_seg(seg):
                 + seg[:, :, 2].astype(np.uint32)
             )
         else:  # gray image saved into 3-channel
-            return seg[:, :, 0]
+            return seg[:, :, 0].astype(np.uint32)
     elif seg.ndim == 4:  # n rgb image
         return (
             seg[:, :, :, 0].astype(np.uint32) * 65536
@@ -56,39 +56,8 @@ def rgb_to_seg(seg):
             + seg[:, :, :, 2].astype(np.uint32)
         )
 
-def rgb_to_seg(seg):
-    """
-    Convert an RGB image to a segmentation map.
 
-    Args:
-        seg (numpy.ndarray): The input RGB image.
 
-    Returns:
-        numpy.ndarray: The segmentation map.
-
-    Notes:
-        - The function converts an RGB image to a segmentation map, where each unique color is assigned a unique segment ID.
-        - The segmentation map is represented as a numpy array.
-    """
-    if seg.ndim == 2 or seg.shape[-1] == 1:
-        return np.squeeze(seg)
-    elif seg.ndim == 3:  # 1 rgb image
-        if (seg[:, :, 1] != seg[:, :, 2]).any() or (
-            seg[:, :, 0] != seg[:, :, 2]
-        ).any():
-            return (
-                seg[:, :, 0].astype(np.uint32) * 65536
-                + seg[:, :, 1].astype(np.uint32) * 256
-                + seg[:, :, 2].astype(np.uint32)
-            )
-        else:  # gray image saved into 3-channel
-            return seg[:, :, 0]
-    elif seg.ndim == 4:  # n rgb image
-        return (
-            seg[:, :, :, 0].astype(np.uint32) * 65536
-            + seg[:, :, :, 1].astype(np.uint32) * 256
-            + seg[:, :, :, 2].astype(np.uint32)
-        )
 
 def seg_downsample_all_id(seg, ratio):
     seg_ds = seg[::ratio[0], ::ratio[1], ::ratio[2]]

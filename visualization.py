@@ -33,16 +33,15 @@ if opt[0] == '0':
         with viewer.txn() as s:
             s.layers['image'] = neuroglancer.ImageLayer(source=D0) 
         conf = read_yml('conf/param.yml')
-        def dsp_seg(name, neuron_names):
+        def dsp_seg(name, neuron_names, rr=2):
             for neuron_name in neuron_names:
                 neuron_id = neuron_name_to_id(conf, neuron_name)
                 bb = neuron_id_to_bbox(conf, neuron_id)        
-                oset = bb[::2]//[1,4,4]        
-                mask = read_h5(f'{conf["result_folder"]}/{name}_{neuron_name}_30-32-32.h5')
+                oset = bb[::2]//[1,4,4]//[rr,rr,rr]
+                mask = read_h5(f'{conf["result_folder"]}/{name}_{neuron_name}_30-32-32.h5')[::rr,::rr,::rr]
                 with viewer.txn() as s:
-                    s.layers.append(name='mask',layer=ng_layer(mask, res, oo=oset[::-1]))
+                    s.layers.append(name='mask',layer=ng_layer(mask, res*rr, oo=oset[::-1]))
         #dsp_seg('neuron', ['KR5', 'KR6'])
-        dsp_seg('neuron', ['KR4'])
-        dsp_seg('sv', ['KR4'])
-        dsp_seg('lv', ['KR4'])
+        #dsp_seg('neuron', ['KR4']);dsp_seg('sv', ['KR4']);dsp_seg('lv', ['KR4'])
+        dsp_seg('neuron', ['RGC7'],2)
     print(viewer)

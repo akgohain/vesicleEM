@@ -8,6 +8,8 @@ import h5py
 from .seg import rgb_to_seg, seg_to_rgb
 from tqdm import tqdm
 import argparse
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 
 def get_arguments():
     """
@@ -185,7 +187,7 @@ def get_filename(filename, index, x):
     return filename[x] if isinstance(filename, list) else filename % index[x]
 
 def read_image_folder(
-    filename, index=None, image_type="image", ratio=None, resize_order=None, crop=None, no_tqdm=False
+    filename, index=None, image_type="image", ratio=None, resize_order=None, crop=None, no_tqdm=False, dtype=None, output_file=None
 ):
     """
     Read a folder of images.
@@ -215,12 +217,22 @@ def read_image_folder(
         i += 1        
     im0 = read_image(get_filename(filename, index, i), image_type, ratio, resize_order, crop=crop)
     sz = list(im0.shape)
-    out = np.zeros([num_image] + sz, im0.dtype)    
+    dt = dtype if dtype is not None else im0.dtype
+    out_sz = [num_image] + sz
+    if output_file is None:
+        out = np.zeros(out_sz, dt)
+    else:
+        fid = h5py.File(output_file, 'w')
+        out = fid.create_dataset('main', out_sz, dtype=dt)
     for i in tqdm(range(num_image), disable=no_tqdm):
         fn = get_filename(filename, index, i)
         if os.path.exists(fn):
-            out[i] = read_image(fn, image_type, ratio, resize_order, crop=crop)
-    return out
+            out[i] = read_image(fn, image_type, ratio, resize_order, crop=crop).astype(dt)
+            
+    if output_file is None: 
+        return out
+    else:
+        fid.close()
         
 def get_filenames(folder_name, output_name=None):
     fns = [x[x.rfind('/')+1:x.rfind('.')] for x in glob(f'{folder_name}/*.png')]
@@ -230,6 +242,28 @@ def get_filenames(folder_name, output_name=None):
         output_name =f'{folder_name}.txt'
     write_txt(output_name, fns)        
 
+def get_seg_dtype(mid):
+    """
+    Get the appropriate data type for a segmentation based on the maximum ID.
+
+    Args:
+        mid (int): The maximum ID in the segmentation.
+
+    Returns:
+        numpy.dtype: The appropriate data type for the segmentation.
+
+    Notes:
+        - The function determines the appropriate data type based on the maximum ID in the segmentation.
+        - The data type is selected to minimize memory usage while accommodating the maximum ID.
+    """    
+    m_type = np.uint64
+    if mid < 2**8:
+        m_type = np.uint8
+    elif mid < 2**16:
+        m_type = np.uint16
+    elif mid < 2**32:
+        m_type = np.uint32
+    return m_type
 
 
 def read_txt(filename):
@@ -274,7 +308,29 @@ def write_txt(filename, content):
         else:
             a.write(content)
 
+def read_h5_chunk(file_handler, chunk_id=0, chunk_num=1):
+    """
+    Read a chunk of data from a file handler.
 
+    Args:
+        file_handler: The file handler object.
+        chunk_id: The ID of the chunk to read. Defaults to 0.
+        chunk_num: The total number of chunks. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: The read chunk of data.
+    """
+    if chunk_num == 1:
+        # read the whole chunk
+        return np.array(file_handler)
+    elif chunk_num == -1:
+        # read a specific slice
+        return np.array(file_handler[chunk_id])
+    else:
+        # read a chunk
+        num_z = int(np.ceil(file_handler.shape[0] / float(chunk_num)))
+        return np.array(file_handler[chunk_id * num_z : (chunk_id + 1) * num_z])
+    
 def read_h5(filename, dataset=None):
     """
     Read data from an HDF5 file.
@@ -294,12 +350,13 @@ def read_h5(filename, dataset=None):
         dataset = fid.keys() if sys.version[0] == "2" else list(fid)
     else:
         if not isinstance(dataset, list):
-            dataset = list(dataset)
+            dataset = [dataset]
 
     out = [None] * len(dataset)
     for di, d in enumerate(dataset):
         out[di] = np.array(fid[d])
-
+    
+    fid.close()
     return out[0] if len(out) == 1 else out
 
 def write_h5(filename, data, dataset="main"):
