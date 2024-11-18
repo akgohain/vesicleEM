@@ -1,4 +1,5 @@
 import os,sys
+sys.path.append('../')
 from util import *
 import numpy as np
 from glob import glob

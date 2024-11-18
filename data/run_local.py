@@ -1,5 +1,6 @@
 import os, sys
 import glob
+sys.path.append('../')
 from util import *
 
 

@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import h5py
+sys.path.append('../')
 from util import *
 from glob import glob
 opt = sys.argv[1]
@@ -25,9 +26,15 @@ elif opt == '1':
     print(sorted(kk[np.in1d(kk, done, invert=True)]))
     """
 elif opt == '2':    
-    aa = [x for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*') if '.' not in x]
+    #aa = [x for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*') if '.' not in x]
+    aa = [x[x.rfind('sv_')+3:x.rfind('_30')] for x in glob('/data/projects/weilab/dataset/hydra/results/sv_*-32.h5')]
+    bb = ','.join(aa)
+    print(f'python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n {bb} -v small')
     for bb in aa:
-        print(f'python run_local.py -t im-to-h5 -p "image_type:seg" -ir "{bb}/*.png"')
+        #print(f'python run_local.py -t im-to-h5 -p "image_type:seg" -ir "{bb}/*.png"')
+        pass
+        
+        
 elif opt == '2.1':
     fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/*.h5'; tdt=np.uint16
     # fn = '/data/projects/weilab/dataset/hydra/results/vesicle_im_*.h5'; tdt=np.uint8

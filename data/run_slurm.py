@@ -1,4 +1,5 @@
 import os, sys
+sys.path.append('../')
 from util import mkdir, write_slurm_all, read_yml
 
 

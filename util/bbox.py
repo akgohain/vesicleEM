@@ -2,7 +2,7 @@ import os
 import numpy as np
 import h5py
 from .io import read_h5
-
+from tqdm import tqdm
 
 def compute_bbox(seg, do_count=False):
     """
@@ -34,7 +34,7 @@ def compute_bbox(seg, do_count=False):
     return out
 
 
-def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1):    
+def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1, no_tqdm=False):    
     if chunk_num == 1:        
         return compute_bbox_all(read_h5(seg_file), do_count, uid)
     else:
@@ -42,7 +42,7 @@ def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1):
         seg = fid[list(fid)[0]]
         num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
         out = []
-        for i in range(chunk_num):
+        for i in tqdm(range(chunk_num), disable=no_tqdm):
             chunk_bbox = compute_bbox_all(np.array(seg[i*num_z: (i+1)*num_z]), do_count, uid) 
             if i == 0:
                 out = chunk_bbox

@@ -1,6 +1,6 @@
 import os, sys
 import numpy as np
-
+sys.path.append('../')
 from util import *
 from neuron_mask import neuron_id_to_bbox, neuron_name_to_id
 

@@ -5,9 +5,11 @@ from .bbox import compute_bbox_all_chunk, merge_bbox_one_matrix, compute_bbox_al
 from .arr import UnionFind
 from .io import vol_downsample_chunk,read_h5,write_h5
 import cc3d
+from tqdm import tqdm
 
 
-def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, seg_file=None, seg_remove=None):
+def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, \
+    seg_file=None, seg_remove=None, no_tqdm=False):
     fid = h5py.File(input_file, 'r+')
     vol = fid[list(fid)[0]]     
     num_z = int(np.ceil(vol.shape[0] / float(chunk_num)))
@@ -16,7 +18,7 @@ def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, seg_file=
         fid_seg = h5py.File(seg_file, 'r')
         seg = fid_seg[list(fid_seg)[0]]
     
-    for i in range(chunk_num): 
+    for i in tqdm(range(chunk_num), disable=no_tqdm): 
         vol_chunk = np.array(vol[i*num_z:(i+1)*num_z])
         if add_loc == 'all':
             vol_chunk[vol_chunk>0] += add_val
@@ -35,7 +37,7 @@ def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, seg_file=
 
 
 def seg_cc_chunk(seg_file, output_file, dt=np.uint16, \
-    seg_func=None, chunk_num=1, dust_size=0):
+    seg_func=None, chunk_num=1, dust_size=0, no_tqdm=False):
     # first pass: compute the relabel with union find
     max_id = 0
     last_slice = []
@@ -46,7 +48,7 @@ def seg_cc_chunk(seg_file, output_file, dt=np.uint16, \
      
     fid = h5py.File(output_file, 'w')
     out = fid.create_dataset('main', seg.shape, dt)
-    for i in range(chunk_num):
+    for i in tqdm(range(chunk_num), disable=no_tqdm):
         vol = np.array(seg[i*num_z:(i+1)*num_z])
         if seg_func is not None:
             vol = seg_func(vol)
@@ -92,7 +94,7 @@ def seg_cc_chunk(seg_file, output_file, dt=np.uint16, \
     fid.close()
     fid_seg.close()
 
-def seg_unique_id_chunk(input_file, chunk_num=1):
+def seg_unique_id_chunk(input_file, chunk_num=1, no_tqdm=False):
     if chunk_num == 1:
         return np.unique(read_h5(input_file))
     else:        
@@ -100,7 +102,7 @@ def seg_unique_id_chunk(input_file, chunk_num=1):
         fid = h5py.File(input_file, 'r')
         seg = fid[list(fid)[0]]
         num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
-        for i in range(chunk_num):
+        for i in tqdm(range(chunk_num), disable=no_tqdm):
             if i == 0:
                 uid = np.unique(np.array(seg[i*num_z:(i+1)*num_z]))
             else:
@@ -109,7 +111,7 @@ def seg_unique_id_chunk(input_file, chunk_num=1):
     return uid
                 
 
-def seg_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1):
+def seg_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1, no_tqdm=False):
     # preserve all seg id 
     # o/w for regular downsample: vol_downsample_chunk(input_file, ratio, output_file, chunk_num) 
     if output_file is not None and os.path.exists(output_file):
@@ -131,10 +133,10 @@ def seg_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1):
         else:
             write_h5(output_file, seg_ds)
     else:
-        vol_downsample_chunk(input_file, ratio, output_file, chunk_num)
+        vol_downsample_chunk(input_file, ratio, output_file, chunk_num, no_tqdm=no_tqdm)
         # process in chunks
-        bbox = compute_bbox_all_chunk(input_file, chunk_num=chunk_num)
-        id_ds = seg_unique_id_chunk(output_file, chunk_num)
+        bbox = compute_bbox_all_chunk(input_file, chunk_num=chunk_num, no_tqdm=no_tqdm)
+        id_ds = seg_unique_id_chunk(output_file, chunk_num, no_tqdm=no_tqdm)
         to_add = np.in1d(bbox[:,0], id_ds, invert=True)
         if to_add.sum() != 0:
             # some seg ids are lost        

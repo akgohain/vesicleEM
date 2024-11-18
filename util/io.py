@@ -424,7 +424,7 @@ def str2dict(input):
     return dict
 
     
-def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1):
+def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1, no_tqdm=False):
     if output_file is None or chunk_num==1:
         vol = read_h5(input_file)
         vol = vol[::ratio[0], ::ratio[1], ::ratio[2]]
@@ -440,7 +440,7 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1):
         result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype)
         
         num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
-        for z in range(chunk_num):
+        for z in tqdm(range(chunk_num), disable=no_tqdm):
             tmp = read_h5_chunk(fid_in_data, z, chunk_num)[::ratio[0],::ratio[1],::ratio[2]]
             result[z*num_z:(z+1)*num_z] = tmp
             

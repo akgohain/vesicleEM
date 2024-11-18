@@ -1,9 +1,7 @@
-import os
+import os,sys
 from glob import glob
-from util.io import *
-from util.tile import *
-from util.seg import *
-from util.bbox import *
+sys.path.append('../')
+from util import *
 import numpy as np
 from neuron_mask import neuron_id_to_bbox, neuron_to_id_name
 import statistics
@@ -51,7 +49,7 @@ def crop_to_tile_all(conf, opt='big', job_id=0, job_num=1):
                 out = crop_to_tile(vol, conf, opt, zz, rc)                
                 write_h5(fout, out)
 
-def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31,31], sz_thres=5, chunk_num=1):
+def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31,31], sz_thres=5, chunk_num=1, no_tqdm=False):
     im = None
     if chunk_num == 1:
         if isinstance(ves_file, str):
@@ -64,7 +62,7 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
             im = im_file
         bbs = compute_bbox_all(ves)
     else:        
-        bbs = compute_bbox_all_chunk(ves_file, chunk_num=chunk_num)
+        bbs = compute_bbox_all_chunk(ves_file, chunk_num=chunk_num, no_tqdm=no_tqdm)
         fid_ves = h5py.File(ves_file, 'r')
         ves = fid_ves[list(fid_ves)[0]]
         if im_file is not None:
@@ -80,7 +78,7 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
     
         
     print('# instances:', len(bbs))
-    for bb in bbs:        
+    for bb in tqdm(bbs, disable=no_tqdm):
         # remove small xy size
         if bb[3:].min() > sz_thres:
             if ves_label is not None:
@@ -181,7 +179,7 @@ def vesicle_vast_small_vesicle(seg_file, meta_file, output_file=None):
         else:
             return out_sv
 
-def vesicle_vast_big_vesicle(seg_file, meta_file, dust_size=50, output_file=None, chunk_num=1):
+def vesicle_vast_big_vesicle(seg_file, meta_file, dust_size=50, output_file=None, chunk_num=1, no_tqdm=False):
     meta_d, meta_n = read_vast_seg(meta_file)
     relabel = vast_meta_relabel(meta_file)    
     if output_file is None or not os.path.exists(output_file):
@@ -205,9 +203,9 @@ def vesicle_vast_big_vesicle(seg_file, meta_file, dust_size=50, output_file=None
         else:
             seg_func = lambda x: relabel[x]==lv_id            
             # write cc into output file
-            seg_cc_chunk(seg_file, output_file, np.uint16, seg_func, chunk_num)
+            seg_cc_chunk(seg_file, output_file, np.uint16, seg_func, chunk_num, no_tqdm=no_tqdm)
             seg_rm = [sv_id, lv_id]
-            seg_add_chunk(output_file, chunk_num, 'all', meta_d[-1,0], seg_file, seg_rm)            
+            seg_add_chunk(output_file, chunk_num, 'all', meta_d[-1,0], seg_file, seg_rm, no_tqdm=no_tqdm)            
             
     
 if __name__ == "__main__":
@@ -270,8 +268,7 @@ if __name__ == "__main__":
         for neuron in args.neuron:                                
             ves_file, im_file = [os.path.join(args.input_folder, f'{x}_{neuron}_{suffix}.h5') for x in ['sv', 'vesicle_im']]
             output_file = os.path.join(args.input_folder, ves_file.replace('.h5', '_patch.h5'))
-            
-            # import pdb;pdb.set_trace() 
-            patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
-            out = vesicle_instance_crop_chunk(ves_file, im_file, sz=patch_sz, sz_thres=0, chunk_num=args.job_num)            
-            write_h5(output_file, out)
+            if not os.path.exists(output_file):                
+                patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
+                out = vesicle_instance_crop_chunk(ves_file, im_file, sz=patch_sz, sz_thres=0, chunk_num=args.job_num)            
+                write_h5(output_file, out)
