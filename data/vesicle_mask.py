@@ -67,7 +67,7 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
         ves = fid_ves[list(fid_ves)[0]]
         if im_file is not None:
             fid_im = h5py.File(im_file, 'r')
-            im = fid_im[list(fid_im)[0]]        
+            im = fid_im[list(fid_im)[0]]
         
     sz = np.array(sz)
     szh = sz//2
@@ -121,6 +121,16 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
     
 
 def neuron_id_to_vesicle(conf, neuron_id, ratio=[1,4,4], opt='big', output_file=None, neuron_file=None):
+    if output_file is not None:
+        if '.png' in output_file:
+            fns = glob(output_file)
+            if len(fns) > 0:
+                print(f'File exists ({len(fns)}):  {output_file}') 
+                return None
+        elif os.path.exists(output_file):
+            print('File exists:', output_file)
+            return None
+                
     bb = neuron_id_to_bbox(conf, neuron_id)
     # prediction mip1: [30, 8, 8]
     # target: [30,32,32]
@@ -232,24 +242,18 @@ if __name__ == "__main__":
             output_file = f'{conf["result_folder"]}/vesicle_{args.vesicle}_{neuron_name}_{suff}'
             if 'file_type' in args.param and args.param['file_type']=='h5':
                 output_file = output_file + '.h5'
-                if os.path.exists(output_file):
-                    continue
             else:                
                 mkdir(output_file)
                 output_file = output_file + '/%04d.png'            
-                fns = glob(output_file + '/*.png')
-                if len(fns) != 0:
-                    continue
             neuron_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{suff}.h5'
-            
-            seg = neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
+            neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':
         # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i SHL17_8nm.h5,VAST_segmentation_metadata_SHL17.txt -n SHL17 -r 1,4,4 -jn 10
         for neuron in args.neuron:
             seg_file, meta_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]
             suffix = arr_to_str(conf['res'])
-            sv_file, lv_file = [os.path.join(args.output_folder, f'{x}_{neuron}_{suffix}.h5') for x in ['sv','lv']]  
+            sv_file, lv_file = [os.path.join(args.output_folder, f'vesicle_{x}_{neuron}_{suffix}.h5') for x in ['small','big']]  
             print(sv_file,lv_file)
             vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
             vesicle_vast_big_vesicle(seg_file, meta_file, \
@@ -265,8 +269,8 @@ if __name__ == "__main__":
     elif args.task == 'neuron-vesicle-patch':
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
         suffix = arr_to_str(conf['res'])
-        for neuron in args.neuron:                                
-            ves_file, im_file = [os.path.join(args.input_folder, f'{x}_{neuron}_{suffix}.h5') for x in ['sv', 'vesicle_im']]
+        for neuron in args.neuron:             
+            ves_file, im_file = [os.path.join(args.input_folder, f'vesicle_{x}_{neuron}_{suffix}.h5') for x in [args.vesicle, 'im']]
             output_file = os.path.join(args.input_folder, ves_file.replace('.h5', '_patch.h5'))
             if not os.path.exists(output_file):                
                 patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]

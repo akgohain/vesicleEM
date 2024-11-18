@@ -74,6 +74,10 @@ def neuron_id_to_bbox(conf, neuron_id, neuron_name=''):
     return bb
 
 def neuron_id_to_neuron(conf, neuron_id, ratio=[1,4,4], output_file=None):    
+    if output_file is not None and os.path.exists(output_file):
+        print('File exists:', output_file)
+        return None
+        
     # read in the bounding box
     bb = neuron_id_to_bbox(conf, neuron_id)
     
@@ -124,8 +128,5 @@ if __name__ == "__main__":
         sn = arr_to_str(np.array(args.ratio) * conf['res'])
         for neuron in args.neuron:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
-            output_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{sn}.h5'
-            if not os.path.exists(output_file):
-                neuron_id_to_neuron(conf, neuron_id, args.ratio, output_file)                
-            else:
-                print('Already exists:', output_file)
+            output_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{sn}.h5'            
+            neuron_id_to_neuron(conf, neuron_id, args.ratio, output_file)

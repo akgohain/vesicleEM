@@ -27,9 +27,12 @@ elif opt == '1':
     """
 elif opt == '2':    
     #aa = [x for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*') if '.' not in x]
-    aa = [x[x.rfind('sv_')+3:x.rfind('_30')] for x in glob('/data/projects/weilab/dataset/hydra/results/sv_*-32.h5')]
+    aa = [x[x.rfind('ll_')+3:x.rfind('_30')] for x in glob('/data/projects/weilab/dataset/hydra/results/vesicle_small_*-32.h5')]
     bb = ','.join(aa)
-    print(f'python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n {bb} -v small')
+    print(f'python neuron_mask.py -t neuron-mask -n {bb}')
+    # print(f'python vesicle_mask.py -t neuron-vesicle -n {bb} -v im -p "file_type:h5"')    
+    #print(f'python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n {bb} -v small')
+    
     for bb in aa:
         #print(f'python run_local.py -t im-to-h5 -p "image_type:seg" -ir "{bb}/*.png"')
         pass
