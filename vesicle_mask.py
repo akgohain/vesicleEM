@@ -248,37 +248,30 @@ if __name__ == "__main__":
 
     elif args.task == 'neuron-vesicle-proofread':
         # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i SHL17_8nm.h5,VAST_segmentation_metadata_SHL17.txt -n SHL17 -r 1,4,4 -jn 10
-        seg_file, meta_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]
-        suffix = arr_to_str(conf['res'])        
-        sv_file, lv_file = [os.path.join(args.output_folder, f'{x}_{args.neuron}_{suffix}.h5') for x in ['sv','lv']]                
-                        
-        vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
-        vesicle_vast_big_vesicle(seg_file, meta_file, \
-                        output_file=lv_file, chunk_num=args.job_num)
-        if max(args.ratio) != 1:
-            # large vesicle direct downsample
-            suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])    
-            sv_file2 = sv_file.replace(suffix, suffix2)            
-            seg_downsample_chunk(sv_file, args.ratio, sv_file2, args.job_num)                
-            lv_file2 = lv_file.replace(suffix, suffix2)
-            seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.job_num)                
+        for neuron in args.neuron:
+            seg_file, meta_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]
+            suffix = arr_to_str(conf['res'])
+            sv_file, lv_file = [os.path.join(args.output_folder, f'{x}_{neuron}_{suffix}.h5') for x in ['sv','lv']]  
+            print(sv_file,lv_file)
+            vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
+            vesicle_vast_big_vesicle(seg_file, meta_file, \
+                            output_file=lv_file, chunk_num=args.job_num)
+            if max(args.ratio) != 1:
+                # large vesicle direct downsample
+                suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])    
+                sv_file2 = sv_file.replace(suffix, suffix2)            
+                seg_downsample_chunk(sv_file, args.ratio, sv_file2, args.job_num)                
+                lv_file2 = lv_file.replace(suffix, suffix2)
+                seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.job_num)                
         
     elif args.task == 'neuron-vesicle-patch':
-        # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -i lv_KR6_30-8-8.h5,vesicle_im_KR6_30-8-8.h5
-        # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -i sv_KR6_30-8-8.h5,vesicle_im_KR6_30-8-8.h5 -v small -p "chunk_num:5"
-        im_file = None
-        if ',' in args.input_file:
-            ves_file, im_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]            
-        else:
-            ves_file = args.input_file
-        
-        
-        # import pdb;pdb.set_trace() 
-        patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
-        chunk_num = 1 if 'chunk_num' not in args.param else args.param['chunk_num']
-        out = vesicle_instance_crop_chunk(ves_file, im_file, sz=patch_sz, sz_thres=0, chunk_num=chunk_num)
-        output_file = args.output_file
-        if output_file == '':
+        # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
+        suffix = arr_to_str(conf['res'])
+        for neuron in args.neuron:                                
+            ves_file, im_file = [os.path.join(args.input_folder, f'{x}_{neuron}_{suffix}.h5') for x in ['sv', 'vesicle_im']]
             output_file = os.path.join(args.input_folder, ves_file.replace('.h5', '_patch.h5'))
-        
-        write_h5(output_file, out)
+            
+            # import pdb;pdb.set_trace() 
+            patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
+            out = vesicle_instance_crop_chunk(ves_file, im_file, sz=patch_sz, sz_thres=0, chunk_num=args.job_num)            
+            write_h5(output_file, out)
