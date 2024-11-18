@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import h5py
 from .bbox import compute_bbox_all_chunk, merge_bbox_one_matrix, compute_bbox_all
@@ -8,12 +9,12 @@ import cc3d
 
 def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, seg_file=None, seg_remove=None):
     fid = h5py.File(input_file, 'r+')
-    vol = fid[fid.keys()[0]]     
+    vol = fid[list(fid)[0]]     
     num_z = int(np.ceil(vol.shape[0] / float(chunk_num)))
 
     if seg_file is not None:
         fid_seg = h5py.File(seg_file, 'r')
-        seg = fid_seg[fid_seg.keys()[0]]
+        seg = fid_seg[list(fid_seg)[0]]
     
     for i in range(chunk_num): 
         vol_chunk = np.array(vol[i*num_z:(i+1)*num_z])
@@ -35,15 +36,13 @@ def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, seg_file=
 
 def seg_cc_chunk(seg_file, output_file, dt=np.uint16, \
     seg_func=None, chunk_num=1, dust_size=0):
-    num_z = int(np.ceil(seg_file.shape[0] / float(chunk_num)))
-    
     # first pass: compute the relabel with union find
     max_id = 0
     last_slice = []
-    relabel = []
-    
+    relabel = []    
     fid_seg = h5py.File(seg_file, 'r')
-    seg = fid_seg[fid_seg.keys()[0]]
+    seg = fid_seg[list(fid_seg)[0]]
+    num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
      
     fid = h5py.File(output_file, 'w')
     out = fid.create_dataset('main', seg.shape, dt)
@@ -66,7 +65,7 @@ def seg_cc_chunk(seg_file, output_file, dt=np.uint16, \
             id2 = vol_cc[0][last_slice>0].reshape(-1,1)
             to_merge = np.unique(np.hstack([id1, id2]), axis=0)
             relabel.union_arr(to_merge)
-            bb = np.vstack(bb, bb_chunk)
+            bb = np.vstack([bb, bb_chunk])
         last_slice = vol_cc[-1]
         max_id += mm    
     
@@ -99,7 +98,7 @@ def seg_unique_id_chunk(input_file, chunk_num=1):
     else:        
         uid = []
         fid = h5py.File(input_file, 'r')
-        seg = fid[fid.keys()[0]]
+        seg = fid[list(fid)[0]]
         num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
         for i in range(chunk_num):
             if i == 0:
@@ -134,7 +133,7 @@ def seg_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1):
     else:
         vol_downsample_chunk(input_file, ratio, output_file, chunk_num)
         # process in chunks
-        bbox = compute_bbox_all_chunk(seg, chunk_num=chunk_num)
+        bbox = compute_bbox_all_chunk(input_file, chunk_num=chunk_num)
         id_ds = seg_unique_id_chunk(output_file, chunk_num)
         to_add = np.in1d(bbox[:,0], id_ds, invert=True)
         if to_add.sum() != 0:

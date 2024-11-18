@@ -1,6 +1,7 @@
 import os
 import numpy as np
-
+import h5py
+from .io import read_h5
 
 
 def compute_bbox(seg, do_count=False):
@@ -33,10 +34,12 @@ def compute_bbox(seg, do_count=False):
     return out
 
 
-def compute_bbox_all_chunk(seg, do_count=False, uid=None, chunk_num=1):
-    if chunk_num == 1:
-        return compute_bbox_all(seg, do_count, uid)
+def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1):    
+    if chunk_num == 1:        
+        return compute_bbox_all(read_h5(seg_file), do_count, uid)
     else:
+        fid = h5py.File(seg_file, 'r')
+        seg = fid[list(fid)[0]]
         num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
         out = []
         for i in range(chunk_num):
@@ -45,6 +48,7 @@ def compute_bbox_all_chunk(seg, do_count=False, uid=None, chunk_num=1):
                 out = chunk_bbox
             else:
                 out = merge_bbox_two_matrices(out, chunk_bbox)
+        fid.close()
         return out 
     
 def compute_bbox_all(seg, do_count=False, uid=None):

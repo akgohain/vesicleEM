@@ -51,17 +51,34 @@ def crop_to_tile_all(conf, opt='big', job_id=0, job_num=1):
                 out = crop_to_tile(vol, conf, opt, zz, rc)                
                 write_h5(fout, out)
 
-def vesicle_instance_crop(ves, im=None, ves_label=None, sz=[5,31,31], sz_thres=5, chunk_num=1):
+def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31,31], sz_thres=5, chunk_num=1):
+    im = None
+    if chunk_num == 1:
+        if isinstance(ves_file, str):
+            ves = read_h5(ves_file)
+            if im_file is not None:
+                im = read_h5(im_file) 
+        else:
+            # volume
+            ves = ves_file
+            im = im_file
+        bbs = compute_bbox_all(ves)
+    else:        
+        bbs = compute_bbox_all_chunk(ves_file, chunk_num=chunk_num)
+        fid_ves = h5py.File(ves_file, 'r')
+        ves = fid_ves[list(fid_ves)[0]]
+        if im_file is not None:
+            fid_im = h5py.File(im_file, 'r')
+            im = fid_im[list(fid_im)[0]]        
+        
     sz = np.array(sz)
     szh = sz//2
     out_im = np.zeros([0] + list(sz), np.uint8)
     out_mask = np.zeros([0] + list(sz), np.uint8)
     tmp = np.zeros(sz, np.uint8)
     out_l = []
-    if chunk_num == 1:
-        bbs = compute_bbox_all(np.array(ves))
-    else:
-        bbs = compute_bbox_all_chunk(ves, chunk_num=chunk_num)
+    
+        
     print('# instances:', len(bbs))
     for bb in bbs:        
         # remove small xy size
@@ -78,7 +95,6 @@ def vesicle_instance_crop(ves, im=None, ves_label=None, sz=[5,31,31], sz_thres=5
             pad_left = (sz - crop.shape) // 2               
             pad_right = sz - crop.shape - pad_left
             # pad: xy-edge, z-reflect
-            import pdb;pdb.set_trace()
             tmp = np.pad(crop, [(pad_left[0],pad_right[0]), (pad_left[1],pad_right[1]), (pad_left[2],pad_right[2])], 'edge')
             out_mask = np.concatenate([out_mask, tmp[None]], axis=0)
             tmp[:] = 0
@@ -90,6 +106,12 @@ def vesicle_instance_crop(ves, im=None, ves_label=None, sz=[5,31,31], sz_thres=5
                 tmp = np.pad(crop, [(pad_left[0],pad_right[0]), (pad_left[1],pad_right[1]), (pad_left[2],pad_right[2])], 'edge')                
                 out_im = np.concatenate([out_im, tmp[None]], axis=0)
                 tmp[:] = 0
+    
+    if chunk_num != 1: 
+        fid_ves.close()
+        if im_file is not None:
+            fid_im.close()
+            
     if ves_label is None:        
         if im is None:
             return out_mask
@@ -225,40 +247,36 @@ if __name__ == "__main__":
             seg = neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':
-        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i SHL17_8nm.h5,VAST_segmentation_metadata_SHL17.txt -o sv_SHL17,lv_SHL17 -r 1,4,4 -jn 10
+        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i SHL17_8nm.h5,VAST_segmentation_metadata_SHL17.txt -n SHL17 -r 1,4,4 -jn 10
         seg_file, meta_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]
-        sv_file, lv_file = [os.path.join(args.output_folder, x) for x in args.output_file.split(',')]
         suffix = arr_to_str(conf['res'])        
-        sv_file = f'{sv_file}_{suffix}.h5'
-        lv_file = f'{lv_file}_{suffix}.h5'
-        chunk_num = int(args.job_num)
-                
+        sv_file, lv_file = [os.path.join(args.output_folder, f'{x}_{args.neuron}_{suffix}.h5') for x in ['sv','lv']]                
+                        
         vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
         vesicle_vast_big_vesicle(seg_file, meta_file, \
-                        output_file=lv_file, chunk_num=chunk_num)
+                        output_file=lv_file, chunk_num=args.job_num)
         if max(args.ratio) != 1:
             # large vesicle direct downsample
             suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])    
             sv_file2 = sv_file.replace(suffix, suffix2)            
-            seg_downsample_chunk(sv_file, args.ratio, sv_file2, chunk_num)                
+            seg_downsample_chunk(sv_file, args.ratio, sv_file2, args.job_num)                
             lv_file2 = lv_file.replace(suffix, suffix2)
-            seg_downsample_chunk(lv_file, args.ratio, lv_file2, chunk_num)                
+            seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.job_num)                
         
     elif args.task == 'neuron-vesicle-patch':
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -i lv_KR6_30-8-8.h5,vesicle_im_KR6_30-8-8.h5
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -i sv_KR6_30-8-8.h5,vesicle_im_KR6_30-8-8.h5 -v small -p "chunk_num:5"
-        im = None
+        im_file = None
         if ',' in args.input_file:
-            ves_file, im_file = args.input_file.split(',') 
-            im = h5py.File(os.path.join(args.input_folder, im_file), 'r')['main']
+            ves_file, im_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]            
         else:
             ves_file = args.input_file
-        ves = h5py.File(os.path.join(args.input_folder, ves_file), 'r')['main']
+        
         
         # import pdb;pdb.set_trace() 
         patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
         chunk_num = 1 if 'chunk_num' not in args.param else args.param['chunk_num']
-        out = vesicle_instance_crop(ves, im, sz=patch_sz, sz_thres=0, chunk_num=chunk_num)
+        out = vesicle_instance_crop_chunk(ves_file, im_file, sz=patch_sz, sz_thres=0, chunk_num=chunk_num)
         output_file = args.output_file
         if output_file == '':
             output_file = os.path.join(args.input_folder, ves_file.replace('.h5', '_patch.h5'))

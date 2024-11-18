@@ -434,7 +434,7 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1):
             write_h5(output_file, vol)
     else:
         fid_in = h5py.File(input_file, 'r')
-        fid_in_data = fid_in[fid_in.keys()[0]]
+        fid_in_data = fid_in[list(fid_in)[0]]
         fid_out = h5py.File(output_file, "w")
         vol_sz = np.array(fid_in_data.shape) // ratio
         result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype)
