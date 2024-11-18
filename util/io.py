@@ -5,7 +5,6 @@ import imageio
 from scipy.ndimage import zoom
 import yaml
 import h5py
-from .seg import rgb_to_seg, seg_to_rgb
 from tqdm import tqdm
 import argparse
 from PIL import Image
@@ -447,3 +446,59 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1):
             
         fid_in.close()
         fid_out.close()
+
+
+def seg_to_rgb(seg):
+    """
+    Convert a segmentation map to an RGB image.
+
+    Args:
+        seg (numpy.ndarray): The input segmentation map.
+
+    Returns:
+        numpy.ndarray: The RGB image representation of the segmentation map.
+
+    Notes:
+        - The function converts a segmentation map to an RGB image, where each unique segment ID is assigned a unique color.
+        - The RGB image is represented as a numpy array.
+    """
+    return np.stack([seg // 65536, seg // 256, seg % 256], axis=2).astype(
+        np.uint8
+    )
+
+
+def rgb_to_seg(seg):
+    """
+    Convert an RGB image to a segmentation map.
+
+    Args:
+        seg (numpy.ndarray): The input RGB image.
+
+    Returns:
+        numpy.ndarray: The segmentation map.
+
+    Notes:
+        - The function converts an RGB image to a segmentation map, where each unique color is assigned a unique segment ID.
+        - The segmentation map is represented as a numpy array.
+    """
+    if seg.ndim == 2:
+        return seg
+    elif seg.shape[-1] == 1:
+        return np.squeeze(seg)
+    elif seg.ndim == 3:  # 1 rgb image
+        if (seg[:, :, 1] != seg[:, :, 2]).any() or (
+            seg[:, :, 0] != seg[:, :, 2]
+        ).any():
+            return (
+                seg[:, :, 0].astype(np.uint32) * 65536
+                + seg[:, :, 1].astype(np.uint32) * 256
+                + seg[:, :, 2].astype(np.uint32)
+            )
+        else:  # gray image saved into 3-channel
+            return seg[:, :, 0].astype(np.uint32)
+    elif seg.ndim == 4:  # n rgb image
+        return (
+            seg[:, :, :, 0].astype(np.uint32) * 65536
+            + seg[:, :, :, 1].astype(np.uint32) * 256
+            + seg[:, :, :, 2].astype(np.uint32)
+        )

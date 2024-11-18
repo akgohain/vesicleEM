@@ -225,18 +225,17 @@ if __name__ == "__main__":
             seg = neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':
-        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i KR4_8nm.h5,VAST_segmentation_metadata_KR4.txt -o sv_KR4,lv_KR4 -r 1,4,4
+        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i SHL17_8nm.h5,VAST_segmentation_metadata_SHL17.txt -o sv_SHL17,lv_SHL17 -r 1,4,4 -jn 10
         seg_file, meta_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]
         sv_file, lv_file = [os.path.join(args.output_folder, x) for x in args.output_file.split(',')]
         suffix = arr_to_str(conf['res'])        
         sv_file = f'{sv_file}_{suffix}.h5'
         lv_file = f'{lv_file}_{suffix}.h5'
-        chunk_num = args.param['job_num']
+        chunk_num = int(args.job_num)
                 
         vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
         vesicle_vast_big_vesicle(seg_file, meta_file, \
                         output_file=lv_file, chunk_num=chunk_num)
-                
         if max(args.ratio) != 1:
             # large vesicle direct downsample
             suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])    
