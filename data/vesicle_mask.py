@@ -245,7 +245,7 @@ if __name__ == "__main__":
             else:                
                 mkdir(output_file)
                 output_file = output_file + '/%04d.png'            
-            neuron_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{suff}.h5'
+            neuron_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{suff}.h5' if args.vesicle != 'im' else None
             neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':

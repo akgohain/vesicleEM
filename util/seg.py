@@ -20,8 +20,9 @@ def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, \
     
     for i in tqdm(range(chunk_num), disable=no_tqdm): 
         vol_chunk = np.array(vol[i*num_z:(i+1)*num_z])
-        if add_loc == 'all':
-            vol_chunk[vol_chunk>0] += add_val
+        if isinstance(add_loc, str):
+            if add_loc == 'all':
+                vol_chunk[vol_chunk>0] += add_val
         elif isinstance(add_loc, np.ndarray):
             vol_chunk[add_loc[:,0], add_loc[:,1], add_loc[:,2]] = add_val
             
