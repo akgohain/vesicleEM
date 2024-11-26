@@ -1,6 +1,6 @@
 import os,sys
-from glob import glob
 sys.path.append('../')
+import glob
 from util import *
 import numpy as np
 from neuron_mask import neuron_id_to_bbox, neuron_to_id_name
@@ -11,26 +11,28 @@ def crop_to_tile(vol, conf, opt, zz, rc):
     meta = np.loadtxt(conf['vesicle_zchunk_meta'].format(zz[0], zz[1])).astype(int)
     pad_z, pad_y, pad_x = conf['vesicle_pad']    
     out_size = [zz[1]-zz[0]] + conf['vesicle_chunk_size']
-    if (np.array(out_size) - vol.shape).max() == 0:
+    """
+    if np.abs(np.array(out_size) - vol.shape).max() == 0:
+        # need to shift pad_xy
         return vol
-    else:
-        dt = np.uint16 if opt != 'im' else np.uint8    
-        out = np.zeros(out_size, dt)
-        # crop: 128x128x120 nm               
-        bb = meta[(meta[:,0]==rc[0])*(meta[:,1]==rc[1])][0]
-        z0, z1 = bb[2]-pad_z//4, bb[3]+pad_z//4
-        y0, y1 = bb[4]-pad_y//16, bb[5]+pad_y//16
-        x0, x1 = bb[6]-pad_x//16, bb[7]+pad_x//16
-        out_p = out[max(0,z0)*4:z1*4, max(0,y0)*16:y1*16, max(0,x0)*16:x1*16]
+    """
+    dt = np.uint16 if opt != 'im' else np.uint8    
+    out = np.zeros(out_size, dt)
+    # crop: 128x128x120 nm               
+    bb = meta[(meta[:,0]==rc[0])*(meta[:,1]==rc[1])][0]
+    z0, z1 = bb[2]-pad_z//4, bb[3]+pad_z//4
+    y0, y1 = bb[4]-pad_y//16, bb[5]+pad_y//16
+    x0, x1 = bb[6]-pad_x//16, bb[7]+pad_x//16
+    out_p = out[max(0,z0)*4:z1*4, max(0,y0)*16:y1*16, max(0,x0)*16:x1*16]
 
-        # initial offset
-        ## z: not adding extra slices
-        ## xy: use neighboring tiles
-        oset = [0, max(0,-y0), max(0,-x0)]                
-        out_p[:]= vol[oset[0]*4:oset[0]*4+out_p.shape[0],\
-                        oset[1]*16:oset[1]*16+out_p.shape[1],\
-                        oset[2]*16:oset[2]*16+out_p.shape[2]]
-        return out
+    # initial offset
+    ## z: not adding extra slices
+    ## xy: use neighboring tiles
+    oset = [0, max(0,-y0), max(0,-x0)]                
+    out_p[:]= vol[oset[0]*4:oset[0]*4+out_p.shape[0],\
+                    oset[1]*16:oset[1]*16+out_p.shape[1],\
+                    oset[2]*16:oset[2]*16+out_p.shape[2]]
+    return out
 
 def crop_to_tile_all(conf, opt='big', job_id=0, job_num=1):
     for zz in conf['vesicle_zchunk'][job_id::job_num]:
@@ -102,7 +104,10 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
                                    max(0,cc[1]-szh[1]):cc[1]+szh[1]+1, \
                                    max(0,cc[2]-szh[2]):cc[2]+szh[2]+1])
                 tmp = np.pad(crop, [(pad_left[0],pad_right[0]), (pad_left[1],pad_right[1]), (pad_left[2],pad_right[2])], 'edge')                
-                out_im = np.concatenate([out_im, tmp[None]], axis=0)
+                try:
+                    out_im = np.concatenate([out_im, tmp[None]], axis=0)
+                except:
+                    import pdb;pdb.set_trace()
                 tmp[:] = 0
     
     if chunk_num != 1: 
@@ -122,8 +127,8 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
 
 def neuron_id_to_vesicle(conf, neuron_id, ratio=[1,4,4], opt='big', output_file=None, neuron_file=None):
     if output_file is not None:
-        if '.png' in output_file:
-            fns = glob(output_file)
+        if '.png' in output_file:            
+            fns = glob.glob(output_file)
             if len(fns) > 0:
                 print(f'File exists ({len(fns)}):  {output_file}') 
                 return None
@@ -141,7 +146,7 @@ def neuron_id_to_vesicle(conf, neuron_id, ratio=[1,4,4], opt='big', output_file=
     zyx_sz = [100, 4096// ratio[1], 4096// ratio[2]]
     bb[:2] = bb[:2] // ratio[0]
     bb[2:4] = bb[2:4] // ratio[1]
-    bb[4:] = bb[4:] // ratio[2]
+    bb[4:] = bb[4:] // ratio[2]    
 
     acc_id, tile_type, h5_func = True, 'seg', None
     if opt == 'im':
@@ -269,10 +274,12 @@ if __name__ == "__main__":
     elif args.task == 'neuron-vesicle-patch':
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
         suffix = arr_to_str(conf['res'])
-        for neuron in args.neuron:             
-            ves_file, im_file = [os.path.join(args.input_folder, f'vesicle_{x}_{neuron}_{suffix}.h5') for x in [args.vesicle, 'im']]
-            output_file = os.path.join(args.input_folder, ves_file.replace('.h5', '_patch.h5'))
+        for neuron in args.neuron[args.job_id::args.job_num]:
+            neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
+            ves_file, im_file = [os.path.join(args.input_folder, f'vesicle_{x}_{neuron_name}_{suffix}.h5') for x in [args.vesicle, 'im']]
+            output_file = ves_file.replace('.h5', '_patch.h5')
             if not os.path.exists(output_file):                
+                print(neuron_name)
                 patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
                 out = vesicle_instance_crop_chunk(ves_file, im_file, sz=patch_sz, sz_thres=0, chunk_num=args.job_num)            
                 write_h5(output_file, out)

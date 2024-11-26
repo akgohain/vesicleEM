@@ -168,6 +168,8 @@ def read_tile_h5_by_bbox(h5_name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], 
     # zz: extra number of slices in the first and last chunk 
     # zz[2]: last zid slice
     
+    if tile_type == 'image':
+        dt = np.uint8
     if output_file is None:
         # return the whole volume
         result = np.zeros((z1-z0, y1-y0, x1-x0), dt)

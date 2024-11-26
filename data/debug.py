@@ -25,18 +25,31 @@ elif opt == '1':
     done = [4,15,16,25,36,37,38,39,40,41,52]
     print(sorted(kk[np.in1d(kk, done, invert=True)]))
     """
+elif opt == '1.1': # check bbox
+    nid = int(sys.argv[2])
+    seg = read_h5("/data/projects/weilab/dataset/hydra/mask_mip5.h5")
+    print(compute_bbox(seg==nid) * np.array([4,32,32]))
+    
 elif opt == '2':    
     #aa = [x for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*') if '.' not in x]
     aa = [x[x.rfind('ll_')+3:x.rfind('_30')] for x in glob('/data/projects/weilab/dataset/hydra/results/vesicle_small_*-32.h5')]
     bb = ','.join(aa)
+    print(len(aa),bb)
     # print(f'python neuron_mask.py -t neuron-mask -n {bb}')
     # print(f'python vesicle_mask.py -t neuron-vesicle -n {bb} -v im -p "file_type:h5"')    
     print(f'python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n {bb} -v small')
-    
+    """
     for bb in aa:
         #print(f'python run_local.py -t im-to-h5 -p "image_type:seg" -ir "{bb}/*.png"')
-        pass
-        
+        try:
+            s1 = np.array(get_vol_shape(f'/data/projects/weilab/dataset/hydra/results/vesicle_im_{bb}_30-8-8.h5'))
+            s2 = np.array(get_vol_shape(f'/data/projects/weilab/dataset/hydra/vesicle_pf/{bb}_8nm.h5'))
+            if np.abs(s1-s2).max()!=0:
+                print(bb,s1,s2)
+        except:
+            print(bb)    
+        #pass
+    """
         
 elif opt == '2.1':
     fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/*.h5'; tdt=np.uint16
@@ -91,3 +104,32 @@ elif opt == '3': # check vast process
     ui3, uc3 = np.unique(out_lv4, return_counts=True)
     ui4, uc4 = np.unique(out_lv4_pre, return_counts=True)
     print('lv4:', np.abs(np.sort(uc3)-np.sort(uc4)).max())    
+elif opt == '4':    
+    from imageio import imwrite
+    from skimage.color import label2rgb
+    Dr = '/data/projects/weilab/dataset/hydra/results/'
+    nn = 'KR4'
+    seg_file = f'{Dr}vesicle_big_{nn}_30-8-8_patch.h5' 
+    result = read_h5(seg_file)
+    ii = 0
+    def compare(ii):
+        imwrite('test_im_%d.png'%ii, result[0][ii,3])
+        imwrite('test_mask_%d.png'%ii, label2rgb(result[1][ii,3], image=result[0][ii,3]))
+        #imwrite('test_seg_%d.png'%ii, result[1][ii,3])
+    compare(ii)
+elif opt == '5':# image volume drift by 128 in xy    
+    from vesicle_mask import crop_to_tile 
+    zz, rc = [388,488], [8,13]
+    opt = 'im'
+    fn = f'/data/projects/weilab/dataset/hydra/im_chunk/tile_{zz[0]}-{zz[1]}/{rc[0]}-{rc[1]}.h5'
+    conf = read_yml('conf/param.yml')
+    vol = read_h5(fn)
+    out = crop_to_tile(vol, conf, opt, zz, rc)
+    write_h5('ha.h5', out)
+    """
+    out = read_h5('ha.h5')
+    out0 = read_h5('/data/projects/weilab/dataset/hydra/im_chunk/tile_388-488/8-13.h5')
+    with viewer.txn() as s:
+        s.layers.append(name='ii',layer=ng_layer(out, [8,8,30], tt='image',oo=[13*4096,8*4096,388]))
+        s.layers.append(name='i0',layer=ng_layer(out0, [8,8,30], tt='image',oo=[13*4096,8*4096,388]))
+    """

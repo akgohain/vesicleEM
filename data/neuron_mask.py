@@ -1,4 +1,5 @@
 import os,sys
+import shutil
 sys.path.append('../')
 from util import *
 import numpy as np
@@ -47,14 +48,15 @@ def compute_bbox_tile(conf, job_id, job_num):
 def merge_bbox_tile(conf, ratio=1, do_return=False):
     fns = read_txt(os.path.join(conf['mask_folder'], 'out.txt'))
     bbox_folder = conf['mask_bbox_folder']
-    out = np.loadtxt(f'{bbox_folder}/{fns[0][:-1]}.txt').astype(int)
+    out = None
     for fn in fns:
-        fn = fn[:-1]
-        bbox = np.loadtxt(f'{bbox_folder}/{fn}.txt').astype(int)
-        if bbox.shape[0] > 0:
-            if bbox.ndim == 1:
-                bbox = bbox.reshape(1,-1)
-            out = merge_bbox_two_matrices(out, bbox)
+        fn_bbox = f'{bbox_folder}/{fn[:-1]}.txt'
+        if os.path.exists(fn_bbox) and os.stat(fn_bbox).st_size > 1:
+            bbox = np.loadtxt(fn_bbox).astype(int)                        
+            if len(bbox) > 0:
+                if bbox.ndim == 1:
+                    bbox = bbox.reshape(1,-1)
+                out = merge_bbox_two_matrices(out, bbox.copy())                    
     if ratio != 1:
         # round it to the downsample ratio
         out[:,3::2] = out[:,3::2]//ratio * ratio
@@ -64,6 +66,37 @@ def merge_bbox_tile(conf, ratio=1, do_return=False):
     else:
         np.savetxt(f'{bbox_folder[:-1]}_init.txt', out, '%d')
 
+def merge_bbox_tile_outlier(conf, neuron_id, change_thres = 10000):
+    fns = sorted(read_txt(os.path.join(conf['mask_folder'], 'out.txt')))
+    bbox_folder = conf['mask_bbox_folder']
+    out = None    
+    for fn in fns:
+        fn_bbox = f'{bbox_folder}/{fn[:-1]}.txt'
+        if os.path.exists(fn_bbox) and os.stat(fn_bbox).st_size > 1:
+            bbox = np.loadtxt(fn_bbox).astype(int)                        
+            if len(bbox) > 0:
+                if bbox.ndim == 1:
+                    bbox = bbox.reshape(1,-1)                
+                bbox = bbox[bbox[:,0] == neuron_id]
+                if len(bbox) > 0:
+                    pre_out = out.copy() if out is not None else None
+                    out = merge_bbox_two_matrices(out, bbox.copy())                
+                    if pre_out is not None and np.abs(np.array(pre_out) - out).max() > change_thres:
+                        print(fn, pre_out, out)
+                        import pdb;pdb.set_trace() 
+                    zz = int(fn[fn.rfind('_s')+2:fn.rfind('_Y')])
+                    # if zz >320 and zz < 325:
+                    #     print(fn, bbox[0], np.array(out[0,2::2])-out[0,1::2])  
+                    # if 's0322_Y3_X3' in fn:                            
+                    #     import pdb;pdb.set_trace()
+                    # make changes
+                    print(fn, bbox[0], np.array(out[0,2::2])-out[0,1::2])  
+                    if bbox[0,-1]<40000 and zz>600 and False:
+                        print(fn, bbox[0], np.array(out[0,2::2])-out[0,1::2])  
+                        shutil.copy(fn_bbox, fn_bbox.replace('.txt','_bk.txt'))
+                        bbox = np.loadtxt(fn_bbox).astype(int)
+                        np.savetxt(fn_bbox, bbox[bbox[:,0] != neuron_id], '%d')    
+        
 def neuron_id_to_bbox(conf, neuron_id, neuron_name=''):
     bbox = np.loadtxt(f"{conf['mask_bbox_folder'][:-1]}.txt").astype(int)
     # find the bounding box of the input id
@@ -113,9 +146,14 @@ if __name__ == "__main__":
     elif args.task == 'tile-bbox':
         # compute bbox for each tile
         compute_bbox_tile(conf, args.job_id, args.job_num)
-    elif args.task == 'neuron-bbox':
+    elif args.task == 'neuron-bbox-all':
         # merge all bbbox
         merge_bbox_tile(conf, 4)
+    elif args.task == 'neuron-bbox-outlier':
+        # monitor the progress of merging each neuron
+        for neuron in args.neuron:
+            neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
+            merge_bbox_tile_outlier(conf, 4, neuron_id=neuron_id)
     elif args.task == 'neuron-bbox-print':
         # print bbox for the neuron
         # python neuron_mask.py -t neuron-bbox-print -n 11,1,2,5,6,17,18,26,62
