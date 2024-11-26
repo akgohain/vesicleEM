@@ -1,0 +1,3 @@
+[submodule "hydra"]
+	path = ves_unsup
+	url = git@github.com:jasonkena/hydra.git

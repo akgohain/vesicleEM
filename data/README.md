@@ -13,19 +13,20 @@
     - Neuron mask tiles (VAST export the whole dataset into tiles of the same size) -> Neuron bounding boxes
         ```
         # find all tile names
-        python neuron_mask.py tile-names
+        python neuron_mask.py -t tile-names
 
         # map: compute neuron bounding box for each tile
         # run the generated slurm files for parallel computation
-        python slurm.py neuron_mask.py tile-bbox {NUM_JOBS}
+        python run_slurm.py neuron_mask.py "-t tile-bbox" {NUM_JOBS}
 
         # reduce: result integration
-        python neuron_mask.py neuron-bbox
+        python neuron_mask.py -t neuron-bbox
         ```
-    - Neuron id -> Bounding box
+    - Neuron id or name -> Bounding box
         ```
-        python neuron_mask.py neuron-bbox-print {NEURON_ID}
+        python neuron_mask.py -t neuron-bbox-print -n {NEURON}
         ```
+<<<<<<< HEAD
 - Generate the neuron mask within its bounding box
         ```
         python neuron_mask.py -t neuron-mask -n {NEURON_IDs_or_NAMEs}
@@ -53,13 +54,17 @@
         python run_local.py -t vol-shape -i /data/projects/weilab/dataset/hydra/vesicle_pf/KR4.h5
         ```
 - Neuron mask
-
-    - Neuron id -> Neuron mask within its bounding box
+    - Neuron id or name -> Neuron mask within its bounding box
+        ```
+        python neuron_mask.py -t neuron-mask -n {NEURON}
+        ```
 
 - Vesicle mask
-    - Tile name -> Vesicle instances (im, seg)
+    - Neuron id or name -> Vesicle instance seg or image within the neuron
         ```
-        python vesicle_mask.py chunk {CHUNK_NAME}
+        # for big vesicle seg
+        python vesicle_mask.py -t neuron-vesicle -n {NEURON} -v big
+        # for image
+        python vesicle_mask.py -t neuron-vesicle -n {NEURON} -v im -p "file_type:h5"
+        
         ```
-
-        python vesicle_mask.py -t neuron-vesicle -n 37,38,39
