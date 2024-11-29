@@ -51,7 +51,7 @@ def crop_to_tile_all(conf, opt='big', job_id=0, job_num=1):
                 out = crop_to_tile(vol, conf, opt, zz, rc)                
                 write_h5(fout, out)
 
-def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31,31], sz_thres=5, chunk_num=1, no_tqdm=False):
+def vesicle_instance_crop_chunk(ves_file, im_file=None, bbs_file=None, ves_label=None, sz=[5,31,31], sz_thres=5, chunk_num=1, no_tqdm=False):
     im = None
     if chunk_num == 1:
         if isinstance(ves_file, str):
@@ -62,9 +62,17 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
             # volume
             ves = ves_file
             im = im_file
-        bbs = compute_bbox_all(ves)
+        if bbs_file is None or not os.path.exists(bbs_file):
+            bbs = compute_bbox_all(ves)
+            write_h5(bbs_file, bbs)
+        else:
+            bbs = read_h5(bbs_file)
     else:        
-        bbs = compute_bbox_all_chunk(ves_file, chunk_num=chunk_num, no_tqdm=no_tqdm)
+        if bbs_file is None or not os.path.exists(bbs_file):
+            bbs = compute_bbox_all_chunk(ves_file, chunk_num=chunk_num, no_tqdm=no_tqdm)
+            write_h5(bbs_file, bbs)
+        else:
+            bbs = read_h5(bbs_file)    
         fid_ves = h5py.File(ves_file, 'r')
         ves = fid_ves[list(fid_ves)[0]]
         if im_file is not None:
@@ -97,7 +105,7 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
             # pad: xy-edge, z-reflect
             tmp = np.pad(crop, [(pad_left[0],pad_right[0]), (pad_left[1],pad_right[1]), (pad_left[2],pad_right[2])], 'edge')
             out_mask = np.concatenate([out_mask, tmp[None]], axis=0)
-            tmp[:] = 0
+            tmp[:] = 0            
             
             if im is not None:
                 crop = np.array(im[max(0,cc[0]-szh[0]):cc[0]+szh[0]+1, \
@@ -109,7 +117,7 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, ves_label=None, sz=[5,31
                 except:
                     import pdb;pdb.set_trace()
                 tmp[:] = 0
-    
+
     if chunk_num != 1: 
         fid_ves.close()
         if im_file is not None:
@@ -276,10 +284,10 @@ if __name__ == "__main__":
         suffix = arr_to_str(conf['res'])
         for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
-            ves_file, im_file = [os.path.join(args.input_folder, f'vesicle_{x}_{neuron_name}_{suffix}.h5') for x in [args.vesicle, 'im']]
+            ves_file, im_file, bbs_file = [os.path.join(args.input_folder, f'vesicle_{x}_{neuron_name}_{suffix}.h5') for x in [args.vesicle, 'im', f'{args.vesicle}-bbs']]
             output_file = ves_file.replace('.h5', '_patch.h5')
             if not os.path.exists(output_file):                
                 print(neuron_name)
                 patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
-                out = vesicle_instance_crop_chunk(ves_file, im_file, sz=patch_sz, sz_thres=0, chunk_num=args.job_num)            
+                out = vesicle_instance_crop_chunk(ves_file, im_file, bbs_file, sz=patch_sz, sz_thres=0, chunk_num=args.job_num)
                 write_h5(output_file, out)

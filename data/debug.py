@@ -133,3 +133,11 @@ elif opt == '5':# image volume drift by 128 in xy
         s.layers.append(name='ii',layer=ng_layer(out, [8,8,30], tt='image',oo=[13*4096,8*4096,388]))
         s.layers.append(name='i0',layer=ng_layer(out0, [8,8,30], tt='image',oo=[13*4096,8*4096,388]))
     """
+
+elif opt == '6': # vesicle small all 0
+    Dr = '/data/projects/weilab/dataset/hydra/results/'
+    nn = 'KR5'
+    im, seg = read_h5(f'{Dr}vesicle_small_{nn}_30-8-8_patch.h5')
+    np.squeeze(im.max(axis=2).max(axis=2))
+    np.squeeze(seg.max(axis=2).max(axis=2))
+    
