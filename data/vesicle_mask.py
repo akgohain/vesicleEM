@@ -111,13 +111,14 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, bbs_file=None, ves_label
                 crop = np.array(im[max(0,cc[0]-szh[0]):cc[0]+szh[0]+1, \
                                    max(0,cc[1]-szh[1]):cc[1]+szh[1]+1, \
                                    max(0,cc[2]-szh[2]):cc[2]+szh[2]+1])
-                tmp = np.pad(crop, [(pad_left[0],pad_right[0]), (pad_left[1],pad_right[1]), (pad_left[2],pad_right[2])], 'edge')                
+                tmp = np.pad(crop, [(pad_left[0],pad_right[0]), (pad_left[1],pad_right[1]), (pad_left[2],pad_right[2])], 'edge')
                 try:
                     out_im = np.concatenate([out_im, tmp[None]], axis=0)
                 except:
                     import pdb;pdb.set_trace()
                 tmp[:] = 0
-
+    
+    # import pdb;pdb.set_trace()
     if chunk_num != 1: 
         fid_ves.close()
         if im_file is not None:

@@ -30,9 +30,9 @@ elif opt == '1.1': # check bbox
     seg = read_h5("/data/projects/weilab/dataset/hydra/mask_mip5.h5")
     print(compute_bbox(seg==nid) * np.array([4,32,32]))
     
-elif opt == '2':    
-    #aa = [x for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*') if '.' not in x]
-    aa = [x[x.rfind('ll_')+3:x.rfind('_30')] for x in glob('/data/projects/weilab/dataset/hydra/results/vesicle_small_*-32.h5')]
+elif opt == '1.2':    
+    aa = [x[x.rfind('/')+1:x.rfind('_')] for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*_8nm.h5')]
+    #aa = [x[x.rfind('ll_')+3:x.rfind('_30')] for x in glob('/data/projects/weilab/dataset/hydra/results/vesicle_small_*-32.h5')]
     bb = ','.join(aa)
     print(len(aa),bb)
     # print(f'python neuron_mask.py -t neuron-mask -n {bb}')
@@ -50,6 +50,12 @@ elif opt == '2':
             print(bb)    
         #pass
     """
+elif opt == '1.3':
+    aa = ['SHL29','SHL53','SHL52','PN8','SHL26','SHL51','KM2','SHL54']    
+    fn = '/data/projects/weilab/dataset/hydra/results/neuron_%s_30-8-8.h5'
+    for bb in aa:
+        if not os.path.exists(fn%bb):
+            print(bb)
         
 elif opt == '2.1':
     fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/*.h5'; tdt=np.uint16
@@ -136,8 +142,10 @@ elif opt == '5':# image volume drift by 128 in xy
 
 elif opt == '6': # vesicle small all 0
     Dr = '/data/projects/weilab/dataset/hydra/results/'
-    nn = 'KR5'
-    im, seg = read_h5(f'{Dr}vesicle_small_{nn}_30-8-8_patch.h5')
-    np.squeeze(im.max(axis=2).max(axis=2))
-    np.squeeze(seg.max(axis=2).max(axis=2))
-    
+    nns = ['KR6','NET12','SHL55','KR11','KR10','SHL20','PN3','LUX2','KR4','KR5','KM4','RGC2','SHL17']
+    # nns = ['KR5']
+    for nn in nns:
+        im, seg = read_h5(f'{Dr}vesicle_small_{nn}_30-8-8_patch.h5')
+        num1 = (im.max(axis=2).max(axis=2)==0).sum()
+        num2 = (seg.max(axis=2).max(axis=2)==0).sum()
+        print(nn,num1,num2)

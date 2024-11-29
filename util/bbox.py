@@ -44,6 +44,7 @@ def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1, no_t
         out = []
         for i in tqdm(range(chunk_num), disable=no_tqdm):
             chunk_bbox = compute_bbox_all(np.array(seg[i*num_z: (i+1)*num_z]), do_count, uid) 
+            chunk_bbox[:,1:3] += i*num_z 
             if i == 0:
                 out = chunk_bbox
             else:

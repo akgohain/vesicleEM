@@ -162,7 +162,7 @@ if __name__ == "__main__":
             neuron_id_to_bbox(conf, neuron_id, neuron_name)
     elif args.task == 'neuron-mask':
         # generate neuron mask from the neuron id or name
-        # python neuron_mask.py -t neuron-mask -n 1
+        # python neuron_mask.py -t neuron-mask -n 1 -r 1,4,4
         sn = arr_to_str(np.array(args.ratio) * conf['res'])
         for neuron in args.neuron:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
