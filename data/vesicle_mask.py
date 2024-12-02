@@ -88,6 +88,7 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, bbs_file=None, ves_label
     
         
     print('# instances:', len(bbs))
+    # import pdb;pdb.set_trace()
     for bb in tqdm(bbs, disable=no_tqdm):
         # remove small xy size
         if bb[3:].min() > sz_thres:
@@ -141,7 +142,7 @@ def neuron_id_to_vesicle(conf, neuron_id, ratio=[1,4,4], opt='big', output_file=
             if len(fns) > 0:
                 print(f'File exists ({len(fns)}):  {output_file}') 
                 return None
-        elif os.path.exists(output_file):
+        elif os.path.exists(output_file):            
             print('File exists:', output_file)
             return None
                 
@@ -174,7 +175,7 @@ def neuron_id_to_vesicle(conf, neuron_id, ratio=[1,4,4], opt='big', output_file=
         mask_file.close()
     return out
 
-def vesicle_vast_small_vesicle(seg_file, meta_file, output_file=None):
+def vesicle_vast_small_vesicle(seg_file, meta_file, output_file=None, output_chunk=8192):
     _, meta_n = read_vast_seg(meta_file)
     relabel = vast_meta_relabel(meta_file)
     if output_file is None or not os.path.exists(output_file):
@@ -187,7 +188,9 @@ def vesicle_vast_small_vesicle(seg_file, meta_file, output_file=None):
             ves_fid = h5py.File(seg_file, 'r')
             ves = ves_fid['main']
             fid = h5py.File(output_file, 'w')
-            out_sv = fid.create_dataset('main', ves.shape, np.uint16)
+            chunk_sz = get_h5_chunk2d(output_chunk, ves.shape[1:])
+            out_sv = fid.create_dataset('main', ves.shape, np.uint16, compression="gzip", \
+                chunks=(1,chunk_sz[0],chunk_sz[1]))
         max_id = 0
         for z in range(ves.shape[0]):
             slice = relabel[np.array(ves[z])]==sv_id
@@ -227,9 +230,9 @@ def vesicle_vast_big_vesicle(seg_file, meta_file, dust_size=50, output_file=None
         else:
             seg_func = lambda x: relabel[x]==lv_id            
             # write cc into output file
-            seg_cc_chunk(seg_file, output_file, np.uint16, seg_func, chunk_num, no_tqdm=no_tqdm)
+            seg_cc_chunk(seg_file, output_file, dt=np.uint16, seg_func=seg_func, chunk_num=chunk_num, no_tqdm=no_tqdm)
             seg_rm = [sv_id, lv_id]
-            seg_add_chunk(output_file, chunk_num, 'all', meta_d[-1,0], seg_file, seg_rm, no_tqdm=no_tqdm)            
+            seg_add_chunk(output_file, chunk_num, 'all', meta_d[-1,0], seg_file, seg_rm, no_tqdm=no_tqdm)
             
     
 if __name__ == "__main__":
@@ -249,7 +252,7 @@ if __name__ == "__main__":
     elif args.task == 'neuron-vesicle':
         # return the vesicle prediction within the neuron bounding box
         # python vesicle_mask.py -t neuron-vesicle -n 37,38,39 -v im -p "file_type:h5"
-        for neuron in args.neuron:
+        for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             # zip -r vesicle_big_5_30-8-8.zip vesicle_big_5_30-8-8
             suff = arr_to_str(np.array(args.ratio) * conf['res'])
@@ -263,15 +266,18 @@ if __name__ == "__main__":
             neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':
-        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i SHL17_8nm.h5,VAST_segmentation_metadata_SHL17.txt -n SHL17 -r 1,4,4 -jn 10
-        for neuron in args.neuron:
+        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i SHL17_8nm.h5,VAST_segmentation_metadata_SHL17.txt -n SHL17 -jn 10
+        for neuron in args.neuron[args.job_id::args.job_num]:
+            neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
+            if args.input_file =='':
+                args.input_file = f'{neuron_name}_8nm.h5,VAST_segmentation_metadata_{neuron_name}.txt'
             seg_file, meta_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]
             suffix = arr_to_str(conf['res'])
-            sv_file, lv_file = [os.path.join(args.output_folder, f'vesicle_{x}_{neuron}_{suffix}.h5') for x in ['small','big']]  
+            sv_file, lv_file = [os.path.join(args.output_folder, f'vesicle_{x}_{neuron_name}_{suffix}.h5') for x in ['small','big']]  
             print(sv_file,lv_file)
-            vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
             vesicle_vast_big_vesicle(seg_file, meta_file, \
                             output_file=lv_file, chunk_num=args.job_num)
+            vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
             if max(args.ratio) != 1:
                 # large vesicle direct downsample
                 suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])    

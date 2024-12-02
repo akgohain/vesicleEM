@@ -143,9 +143,23 @@ elif opt == '5':# image volume drift by 128 in xy
 elif opt == '6': # vesicle small all 0
     Dr = '/data/projects/weilab/dataset/hydra/results/'
     nns = ['KR6','NET12','SHL55','KR11','KR10','SHL20','PN3','LUX2','KR4','KR5','KM4','RGC2','SHL17']
+    fn = 'big'
+    fn = 'small'
     # nns = ['KR5']
     for nn in nns:
-        im, seg = read_h5(f'{Dr}vesicle_small_{nn}_30-8-8_patch.h5')
+        im, seg = read_h5(f'{Dr}vesicle_{fn}_{nn}_30-8-8_patch.h5')
         num1 = (im.max(axis=2).max(axis=2)==0).sum()
         num2 = (seg.max(axis=2).max(axis=2)==0).sum()
         print(nn,num1,num2)
+    
+elif opt == '7': # vesicle pf
+    fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/SHL17_8nm.h5'
+    fn = '/data/projects/weilab/dataset/hydra/results/vesicle_big_SHL17_30-8-8.h5'
+    fn = '/data/projects/weilab/dataset/hydra/results/vesicle_small_SHL17_30-8-8.h5'
+    chunk_num = 10
+    
+    vol = h5py.File(fn, 'r')['main']
+    num_z = int(np.ceil(vol.shape[0] / float(chunk_num)))
+    for i in range(chunk_num):
+        seg = np.array(vol[i*num_z:(i+1)*num_z])
+        print(i, seg.max())

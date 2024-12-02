@@ -110,7 +110,7 @@ def neuron_id_to_neuron(conf, neuron_id, ratio=[1,4,4], output_file=None):
     if output_file is not None and os.path.exists(output_file):
         print('File exists:', output_file)
         return None
-        
+     
     # read in the bounding box
     bb = neuron_id_to_bbox(conf, neuron_id)
     
@@ -164,7 +164,8 @@ if __name__ == "__main__":
         # generate neuron mask from the neuron id or name
         # python neuron_mask.py -t neuron-mask -n 1 -r 1,4,4
         sn = arr_to_str(np.array(args.ratio) * conf['res'])
-        for neuron in args.neuron:
+        for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             output_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{sn}.h5'            
             neuron_id_to_neuron(conf, neuron_id, args.ratio, output_file)
+            

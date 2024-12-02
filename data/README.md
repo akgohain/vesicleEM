@@ -26,7 +26,6 @@
         ```
         python neuron_mask.py -t neuron-bbox-print -n {NEURON}
         ```
-<<<<<<< HEAD
 - Generate the neuron mask within its bounding box
         ```
         python neuron_mask.py -t neuron-mask -n {NEURON_IDs_or_NAMEs}
@@ -52,11 +51,6 @@
     - Print the h5 volume size
         ```
         python run_local.py -t vol-shape -i /data/projects/weilab/dataset/hydra/vesicle_pf/KR4.h5
-        ```
-- Neuron mask
-    - Neuron id or name -> Neuron mask within its bounding box
-        ```
-        python neuron_mask.py -t neuron-mask -n {NEURON}
         ```
 
 - Vesicle mask
