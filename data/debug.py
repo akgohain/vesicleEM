@@ -140,17 +140,36 @@ elif opt == '5':# image volume drift by 128 in xy
         s.layers.append(name='i0',layer=ng_layer(out0, [8,8,30], tt='image',oo=[13*4096,8*4096,388]))
     """
 
-elif opt == '6': # vesicle small all 0
+elif opt[0] == '6':
     Dr = '/data/projects/weilab/dataset/hydra/results/'
     nns = ['KR6','NET12','SHL55','KR11','KR10','SHL20','PN3','LUX2','KR4','KR5','KM4','RGC2','SHL17']
     fn = 'big'
-    fn = 'small'
-    # nns = ['KR5']
-    for nn in nns:
-        im, seg = read_h5(f'{Dr}vesicle_{fn}_{nn}_30-8-8_patch.h5')
-        num1 = (im.max(axis=2).max(axis=2)==0).sum()
-        num2 = (seg.max(axis=2).max(axis=2)==0).sum()
-        print(nn,num1,num2)
+    # fn = 'small'
+    if opt == '6': # vesicle small all 0
+        # nns = ['KR5']
+        for nn in nns:
+            sn = f'{Dr}vesicle_{fn}_{nn}_30-8-8_patch.h5'
+            if not os.path.exists(sn):
+                print('No', sn)
+            else:
+                im, seg = read_h5(sn)
+                num1 = (im.max(axis=1).max(axis=1).max(axis=1)==0).sum()
+                num2 = (seg.max(axis=1).max(axis=1).max(axis=1)==0).sum()
+                print(nn,num1,num2)
+    elif opt == '6.1': # vesicle small all 0
+        # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
+        nn = 'KR11'
+        sn = f'{Dr}vesicle_{fn}_{nn}_30-8-8_patch.h5'
+        im, seg = read_h5(sn)
+        num2 = (seg.max(axis=1).max(axis=1).max(axis=1)==0)
+    elif opt == '6.2': # vesicle small all 0
+        nn = 'KR4'
+        sn = read_h5(f'{Dr}vesicle_{fn}_{nn}_30-8-8.h5')
+        chunk_num=10
+        bbs = compute_bbox_all_chunk(sn, chunk_num=chunk_num)
+        bbs2 = compute_bbox_all_chunk(sn, chunk_num=1)
+        diff = np.abs(bbs-bbs2).max()
+        print(diff)
     
 elif opt == '7': # vesicle pf
     fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/SHL17_8nm.h5'

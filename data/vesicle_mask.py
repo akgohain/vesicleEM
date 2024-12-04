@@ -53,26 +53,25 @@ def crop_to_tile_all(conf, opt='big', job_id=0, job_num=1):
 
 def vesicle_instance_crop_chunk(ves_file, im_file=None, bbs_file=None, ves_label=None, sz=[5,31,31], sz_thres=5, chunk_num=1, no_tqdm=False):
     im = None
-    if chunk_num == 1:
+    if chunk_num == 1: # read in the volume directly
         if isinstance(ves_file, str):
             ves = read_h5(ves_file)
             if im_file is not None:
                 im = read_h5(im_file) 
-        else:
-            # volume
+        else: # volume
             ves = ves_file
             im = im_file
         if bbs_file is None or not os.path.exists(bbs_file):
             bbs = compute_bbox_all(ves)
             write_h5(bbs_file, bbs)
         else:
-            bbs = read_h5(bbs_file)
-    else:        
-        if bbs_file is None or not os.path.exists(bbs_file):
+            bbs = read_h5(bbs_file)             
+    else: # read in the volume by chunks
+        if bbs_file is None or not os.path.exists(bbs_file):    
             bbs = compute_bbox_all_chunk(ves_file, chunk_num=chunk_num, no_tqdm=no_tqdm)
             write_h5(bbs_file, bbs)
         else:
-            bbs = read_h5(bbs_file)    
+            bbs = read_h5(bbs_file)
         fid_ves = h5py.File(ves_file, 'r')
         ves = fid_ves[list(fid_ves)[0]]
         if im_file is not None:
@@ -89,6 +88,8 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, bbs_file=None, ves_label
         
     print('# instances:', len(bbs))
     # import pdb;pdb.set_trace()
+    
+    #for aa,bb in enumerate(bbs):
     for bb in tqdm(bbs, disable=no_tqdm):
         # remove small xy size
         if bb[3:].min() > sz_thres:
@@ -118,7 +119,10 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, bbs_file=None, ves_label
                 except:
                     import pdb;pdb.set_trace()
                 tmp[:] = 0
-    
+        """
+        if aa==9:
+            import pdb;pdb.set_trace()
+        """
     # import pdb;pdb.set_trace()
     if chunk_num != 1: 
         fid_ves.close()
@@ -266,7 +270,7 @@ if __name__ == "__main__":
             neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':
-        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i SHL17_8nm.h5,VAST_segmentation_metadata_SHL17.txt -n SHL17 -jn 10
+        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -n SHL17 -jn 10 -r 1,4,4
         for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             if args.input_file =='':
@@ -276,15 +280,15 @@ if __name__ == "__main__":
             sv_file, lv_file = [os.path.join(args.output_folder, f'vesicle_{x}_{neuron_name}_{suffix}.h5') for x in ['small','big']]  
             print(sv_file,lv_file)
             vesicle_vast_big_vesicle(seg_file, meta_file, \
-                            output_file=lv_file, chunk_num=args.job_num)
+                            output_file=lv_file, chunk_num=args.chunk_num)
             vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
             if max(args.ratio) != 1:
                 # large vesicle direct downsample
                 suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])    
                 sv_file2 = sv_file.replace(suffix, suffix2)            
-                seg_downsample_chunk(sv_file, args.ratio, sv_file2, args.job_num)                
+                seg_downsample_chunk(sv_file, args.ratio, sv_file2, args.chunk_num)                
                 lv_file2 = lv_file.replace(suffix, suffix2)
-                seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.job_num)                
+                seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.chunk_num)                
         
     elif args.task == 'neuron-vesicle-patch':
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
@@ -296,5 +300,5 @@ if __name__ == "__main__":
             if not os.path.exists(output_file):                
                 print(neuron_name)
                 patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
-                out = vesicle_instance_crop_chunk(ves_file, im_file, bbs_file, sz=patch_sz, sz_thres=0, chunk_num=args.job_num)
-                write_h5(output_file, out)
+                out = vesicle_instance_crop_chunk(ves_file, im_file, bbs_file, sz=patch_sz, sz_thres=0, chunk_num=args.chunk_num)
+                write_h5(output_file, out)                    

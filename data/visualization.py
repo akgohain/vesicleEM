@@ -53,6 +53,7 @@ if opt[0] == '0':
         #dsp_seg('neuron', ['KR5', 'KR6'])
         #dsp_seg('neuron', ['KR4']);dsp_seg('sv', ['KR4']);dsp_seg('lv', ['KR4'])
         #dsp_seg('neuron', ['KR4']);dsp_seg('vesicle_big', ['KR4'])
-        dsp_seg('vesicle_im', ['KR5'], 1)
+        dsp_seg('vesicle_big', ['KR11'])
+        #dsp_seg('vesicle_im', ['KR5'], 1)
         #dsp_seg('neuron', ['RGC7'],2)
     print(viewer)

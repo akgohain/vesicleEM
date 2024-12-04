@@ -30,7 +30,7 @@ if __name__ == "__main__":
     elif args.task == 'downsample':
         # python run_local.py -t downsample -i /data/projects/weilab/dataset/hydra/results/neuron_NET11_30-8-8.h5 -r 1,4,4 -o neuron_NET11_30-32-32.h5
         output_file = os.path.join(os.path.dirname(args.input_file), args.output_file)
-        vol_downsample_chunk(args.input_file, args.ratio, output_file, args.job_num)
+        vol_downsample_chunk(args.input_file, args.ratio, output_file, args.chunk_num)
     elif args.task == 'vol-shape':
         # python run_local.py -t vol-shape -i /data/projects/weilab/dataset/hydra/results/sv_KR4_30-32-32.h5
         if '.h5' in args.input_file:
