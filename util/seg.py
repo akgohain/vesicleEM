@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 from .bbox import compute_bbox_all_chunk, merge_bbox_one_matrix, compute_bbox_all
 from .arr import UnionFind
-from .io import vol_downsample_chunk,read_h5,write_h5
+from .io import vol_downsample_chunk,read_h5,write_h5,get_h5_chunk2d
 import cc3d
 from tqdm import tqdm
 
@@ -18,26 +18,36 @@ def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, \
         fid_seg = h5py.File(seg_file, 'r')
         seg = fid_seg[list(fid_seg)[0]]
     
-    for i in tqdm(range(chunk_num), disable=no_tqdm): 
-        vol_chunk = np.array(vol[i*num_z:(i+1)*num_z])
+    for i in tqdm(range(chunk_num), disable=no_tqdm):
+        vol_chunk_val = np.array(vol[i*num_z:(i+1)*num_z])
+        do_change = False
         if isinstance(add_loc, str):
             if add_loc == 'all':
-                vol_chunk[vol_chunk>0] += add_val
+                # add constant value
+                vol_chunk_val[vol_chunk_val>0] += add_val
+                do_change = True
         elif isinstance(add_loc, np.ndarray):
-            vol_chunk[add_loc[:,0], add_loc[:,1], add_loc[:,2]] = add_val
+            ind = (add_loc[:,0]>=i*num_z) * (add_loc[:,0]<(i+1)*num_z)
+            vol_chunk_val[add_loc[ind,0]-i*num_z, add_loc[ind,1], add_loc[ind,2]] = add_val[ind]
+            do_change = True
             
         if seg_file is not None:
             vol_seg = np.array(seg[i*num_z:(i+1)*num_z])
             if seg_remove is not None:
                 vol_seg = seg_remove_id(vol_seg, seg_remove)
-            vol[vol_seg>0] += vol_seg[vol_seg>0]
+            vol_chunk_val[vol_seg>0] += vol_seg[vol_seg>0]
+            do_change = True
+            
+        if do_change:
+            vol[i*num_z:(i+1)*num_z] = vol_chunk_val
+         
     if seg_file is not None:
         fid_seg.close()
          
     fid.close()
 
 
-def seg_cc_chunk(seg_file, output_file, dt=np.uint16, \
+def seg_cc_chunk(seg_file, output_file, output_chunk=8192, dt=np.uint16, \
     seg_func=None, chunk_num=1, dust_size=0, no_tqdm=False):
     # first pass: compute the relabel with union find
     max_id = 0
@@ -48,7 +58,10 @@ def seg_cc_chunk(seg_file, output_file, dt=np.uint16, \
     num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
      
     fid = h5py.File(output_file, 'w')
-    out = fid.create_dataset('main', seg.shape, dt)
+    # default size 8192
+    chunk_sz = get_h5_chunk2d(output_chunk/num_z, seg.shape[1:])
+    out = fid.create_dataset('main', seg.shape, dt, compression="gzip", \
+        chunks=(num_z, chunk_sz[0], chunk_sz[1]))
     for i in tqdm(range(chunk_num), disable=no_tqdm):
         vol = np.array(seg[i*num_z:(i+1)*num_z])
         if seg_func is not None:
@@ -86,11 +99,11 @@ def seg_cc_chunk(seg_file, output_file, dt=np.uint16, \
     bb = bb[bb[:,0] != 0]
         
     if dust_size > 0:
-        relabel[np.in1d(relabel, bb[bb[:,-1] <= dust_size, 0])] = 0        
+        relabel_arr[np.in1d(relabel_arr, bb[bb[:,-1] <= dust_size, 0])] = 0        
     
     # second pass: apply relabel
     for i in range(chunk_num): 
-        out[i*num_z:(i+1)*num_z] = relabel[np.array(out[i*num_z:(i+1)*num_z])]
+        out[i*num_z:(i+1)*num_z] = relabel_arr[np.array(out[i*num_z:(i+1)*num_z]).astype(int)]
         
     fid.close()
     fid_seg.close()
@@ -135,14 +148,16 @@ def seg_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1, no_tq
             write_h5(output_file, seg_ds)
     else:
         vol_downsample_chunk(input_file, ratio, output_file, chunk_num, no_tqdm=no_tqdm)
+        # import pdb;pdb.set_trace()
         # process in chunks
-        bbox = compute_bbox_all_chunk(input_file, chunk_num=chunk_num, no_tqdm=no_tqdm)
+        bbox = compute_bbox_all_chunk(input_file, chunk_num=chunk_num, no_tqdm=no_tqdm)        
         id_ds = seg_unique_id_chunk(output_file, chunk_num, no_tqdm=no_tqdm)
         to_add = np.in1d(bbox[:,0], id_ds, invert=True)
         if to_add.sum() != 0:
             # some seg ids are lost        
             add_id = bbox[to_add, 0]
             add_loc = np.round(((bbox[to_add,1::2] + bbox[to_add,2::2]) /2) / ratio).astype(int)
+            # import pdb;pdb.set_trace()
             seg_add_chunk(output_file, chunk_num, add_loc, add_id)            
     
 def seg_remove_id(seg, bid, invert=False):
@@ -246,4 +261,4 @@ def vast_meta_relabel(
             rl[rl == u0] = rl[u0]
             u0 = rl[u0]
         print(u, rl)
-    return rl        
+    return rl

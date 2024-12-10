@@ -2,7 +2,7 @@ import os
 import numpy as np
 import h5py
 from tqdm import tqdm
-from .io import read_image, write_image, read_h5
+from .io import read_image, write_image, read_h5, get_h5_chunk2d
 
 def get_tile_name(pattern, row=None, column=None):
     """
@@ -28,7 +28,7 @@ def get_tile_name(pattern, row=None, column=None):
 def read_tile_image_by_bbox(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, tile_st=None, 
                      tile_dtype=np.uint8, tile_type="image", tile_ratio=1, 
                      tile_resize_mode=1, tile_border_padding="reflect", tile_blank="", 
-                     volume_sz=None, zstep=1, no_tqdm=False, output_file=None, relabel=None):
+                     volume_sz=None, zstep=1, no_tqdm=False, output_file=None, output_chunk=8192, relabel=None):
     """
     Read and assemble a volume from a set of tiled images.
 
@@ -101,7 +101,10 @@ def read_tile_image_by_bbox(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, ti
         result = np.zeros(result_shape, tile_dtype)
     else:
         fid = h5py.File(output_file, 'w')
-        result = fid.create_dataset('main', result_shape, dtype=tile_dtype)
+        chunk_sz = get_h5_chunk2d(output_chunk, result_shape[1:])
+        chunk_sz = [min(chunk_sz[x],tile_sz[x]) for x in range(2)]
+        result = fid.create_dataset('main', result_shape, dtype=tile_dtype, \
+            compression="gzip", chunks=(1,chunk_sz[0],chunk_sz[1]))
     
     c0 = x0 // tile_sz[1]  # floor
     c1 = (x1 + tile_sz[1] - 1) // tile_sz[1]  # ceil
@@ -162,7 +165,7 @@ def read_tile_image_by_bbox(filenames, z0p, z1p, y0p, y1p, x0p, x1p, tile_sz, ti
 
 def read_tile_h5_by_bbox(h5_name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], \
     cid=-1, dt=np.uint16, zz=[0,0,-1], tile_step=1, zstep=1, acc_id = False, \
-        h5_key='main', no_tqdm=False, output_file=None, tile_type='image', mask=None, h5_func=None):
+        h5_key='main', no_tqdm=False, output_file=None, output_chunk=8192, tile_type='image', mask=None, h5_func=None):
     if not isinstance(tile_step, (list,)):
         tile_step = [tile_step, tile_step]
     # zz: extra number of slices in the first and last chunk 
@@ -177,7 +180,10 @@ def read_tile_h5_by_bbox(h5_name, z0, z1, y0, y1, x0, x1, zyx_sz, zyx0=[0,0,0], 
         if '.h5' in output_file:
             # output as h5
             fid_out = h5py.File(output_file, 'w')
-            result = fid_out.create_dataset('main', (z1-z0, y1-y0, x1-x0), dtype=dt) 
+            num_z = zyx_sz[0]
+            chunk_sz = get_h5_chunk2d(output_chunk/num_z, zyx_sz[1:])
+            result = fid_out.create_dataset('main', (z1-z0, y1-y0, x1-x0), \
+                dtype=dt, compression="gzip", chunks=tuple([num_z,chunk_sz[0],chunk_sz[1]]))
         else:
             # output images for VAST import
             result = np.zeros((zyx_sz[0] + max(zz[:2]), y1-y0, x1-x0), dt) 

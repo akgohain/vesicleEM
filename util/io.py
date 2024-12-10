@@ -93,6 +93,12 @@ def get_arguments():
         type=int,        
         default=1,
     )
+    parser.add_argument(
+        "-cn",
+        "--chunk-num",
+        type=int,        
+        default=1,
+    )
     args = parser.parse_args()
     if args.param != "":
         args.param = str2dict(args.param)
@@ -186,7 +192,8 @@ def get_filename(filename, index, x):
     return filename[x] if isinstance(filename, list) else filename % index[x]
 
 def read_image_folder(
-    filename, index=None, image_type="image", ratio=None, resize_order=None, crop=None, no_tqdm=False, dtype=None, output_file=None
+    filename, index=None, image_type="image", ratio=None, resize_order=None, \
+        crop=None, no_tqdm=False, dtype=None, output_file=None, output_chunk=8192
 ):
     """
     Read a folder of images.
@@ -220,9 +227,13 @@ def read_image_folder(
     out_sz = [num_image] + sz
     if output_file is None:
         out = np.zeros(out_sz, dt)
-    else:
+    else:        
+        if os.path.exists(output_file):
+            return None
         fid = h5py.File(output_file, 'w')
-        out = fid.create_dataset('main', out_sz, dtype=dt)
+        chunk_sz = get_h5_chunk2d(output_chunk, sz)
+        out = fid.create_dataset('main', out_sz, dtype=dt, \
+            compression="gzip", chunks=(1, chunk_sz[0], chunk_sz[1]))
     for i in tqdm(range(num_image), disable=no_tqdm):
         fn = get_filename(filename, index, i)
         if os.path.exists(fn):
@@ -382,15 +393,14 @@ def write_h5(filename, data, dataset="main"):
             ds = fid.create_dataset(
                 dd,
                 data[i].shape,
+                data = data[i],
                 compression="gzip",
                 dtype=data[i].dtype,
             )
-            ds[:] = data[i]
     else:
         ds = fid.create_dataset(
-            dataset, data.shape, compression="gzip", dtype=data.dtype
+            dataset, data.shape, data=data, compression="gzip", dtype=data.dtype
         )
-        ds[:] = data
     fid.close()
 
 
@@ -424,7 +434,7 @@ def str2dict(input):
     return dict
 
     
-def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1, no_tqdm=False):
+def vol_downsample_chunk(input_file, ratio, output_file=None, output_chunk=8192, chunk_num=1, no_tqdm=False):
     if output_file is None or chunk_num==1:
         vol = read_h5(input_file)
         vol = vol[::ratio[0], ::ratio[1], ::ratio[2]]
@@ -437,9 +447,12 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1, no_tq
         fid_in_data = fid_in[list(fid_in)[0]]
         fid_out = h5py.File(output_file, "w")
         vol_sz = np.array(fid_in_data.shape) // ratio
-        result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype)
-        
         num_z = int(np.ceil(vol_sz[0] / float(chunk_num)))
+       
+        chunk_sz = get_h5_chunk2d(output_chunk/num_z, vol_sz[1:]) 
+        result = fid_out.create_dataset('main', vol_sz, dtype=fid_in_data.dtype, \
+            compression="gzip", chunks=(num_z,chunk_sz[0],chunk_sz[1]))
+                
         for z in tqdm(range(chunk_num), disable=no_tqdm):
             tmp = read_h5_chunk(fid_in_data, z, chunk_num)[::ratio[0],::ratio[1],::ratio[2]]
             result[z*num_z:(z+1)*num_z] = tmp
@@ -447,6 +460,8 @@ def vol_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1, no_tq
         fid_in.close()
         fid_out.close()
 
+def get_h5_chunk2d(target_size=8192, min_size=8192):
+    return np.minimum(min_size, int(2**np.ceil(np.log2(np.sqrt(target_size)))))
 
 def seg_to_rgb(seg):
     """

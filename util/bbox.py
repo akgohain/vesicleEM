@@ -35,8 +35,10 @@ def compute_bbox(seg, do_count=False):
 
 
 def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1, no_tqdm=False):    
-    if chunk_num == 1:        
-        return compute_bbox_all(read_h5(seg_file), do_count, uid)
+    if chunk_num == 1:
+        if isinstance(seg_file):
+            seg_file = read_h5(seg_file)
+        return compute_bbox_all(seg_file, do_count, uid)
     else:
         fid = h5py.File(seg_file, 'r')
         seg = fid[list(fid)[0]]
@@ -46,9 +48,10 @@ def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1, no_t
             chunk_bbox = compute_bbox_all(np.array(seg[i*num_z: (i+1)*num_z]), do_count, uid) 
             chunk_bbox[:,1:3] += i*num_z 
             if i == 0:
-                out = chunk_bbox
+                out = chunk_bbox.copy()
             else:
                 out = merge_bbox_two_matrices(out, chunk_bbox)
+            # import pdb;pdb.set_trace()
         fid.close()
         return out 
     
@@ -80,10 +83,6 @@ def compute_bbox_all(seg, do_count=False, uid=None):
     else:
         raise "input volume should be either 2D or 3D" 
 
-def compute_bbox_all_2d_chunk(seg, chunk_num=1, do_count=False, uid=None):
-    num_z = int(np.ceil(seg.shape[0] / float(chunk_num)))
-    for cid in range(chunk_num):
-        pass
     
 def compute_bbox_all_2d(seg, do_count=False, uid=None):
     """
@@ -232,7 +231,7 @@ def merge_bbox_one_matrix(bbox):
     return out
         
 
-def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
+def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b, do_sort=True):
     """
     Merge two matrices of bounding boxes.
 
@@ -267,5 +266,9 @@ def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b):
         bbox_b_index = bbox_b_id == bbox_a_id[i]
         bbox_b = bbox_mb[bbox_b_index, 1:][0]
         bbox_mb[bbox_b_index, 1:] = merge_bbox(bbox_a, bbox_b)
-    return np.vstack([bbox_matrix_a[np.logical_not(intersect_id)], bbox_mb])
+    
+    out = np.vstack([bbox_matrix_a[np.logical_not(intersect_id)], bbox_mb])
+    if do_sort:
+        out = out[np.argsort(out[:,0])]
+    return out
 
