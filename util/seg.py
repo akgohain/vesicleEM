@@ -147,7 +147,7 @@ def seg_downsample_chunk(input_file, ratio, output_file=None, chunk_num=1, no_tq
         else:
             write_h5(output_file, seg_ds)
     else:
-        vol_downsample_chunk(input_file, ratio, output_file, chunk_num, no_tqdm=no_tqdm)
+        vol_downsample_chunk(input_file, ratio, output_file, chunk_num=chunk_num, no_tqdm=no_tqdm)
         # import pdb;pdb.set_trace()
         # process in chunks
         bbox = compute_bbox_all_chunk(input_file, chunk_num=chunk_num, no_tqdm=no_tqdm)        
