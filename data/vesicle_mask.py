@@ -1,5 +1,4 @@
 import os,sys
-sys.path.append('../')
 import glob
 from util import *
 import numpy as np
@@ -274,7 +273,7 @@ if __name__ == "__main__":
         for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             if args.input_file =='':
-                args.input_file = f'{neuron_name}_8nm.h5,VAST_segmentation_metadata_{neuron_name}.txt'
+                args.input_file = f'{neuron_name}.h5,VAST_segmentation_metadata_{neuron_name}.txt'
             seg_file, meta_file = [os.path.join(args.input_folder, x) for x in args.input_file.split(',')]
             suffix = arr_to_str(conf['res'])
             sv_file, lv_file = [os.path.join(args.output_folder, f'vesicle_{x}_{neuron_name}_{suffix}.h5') for x in ['small','big']]  

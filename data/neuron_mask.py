@@ -1,6 +1,5 @@
 import os,sys
 import shutil
-sys.path.append('../')
 from util import *
 import numpy as np
 from glob import glob
@@ -168,4 +167,3 @@ if __name__ == "__main__":
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             output_file = f'{conf["result_folder"]}/neuron_{neuron_name}_{sn}.h5'            
             neuron_id_to_neuron(conf, neuron_id, args.ratio, output_file)
-            

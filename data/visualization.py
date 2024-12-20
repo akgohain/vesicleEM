@@ -18,7 +18,7 @@ if opt[0] == '0':
     # ng visualization
     import neuroglancer
     ip = 'localhost' # or public IP of the machine for sharable display
-    port = 9092 # change to an unused port number
+    port = 9094 # change to an unused port number
     neuroglancer.set_server_bind_address(bind_address=ip,bind_port=port)
     viewer = neuroglancer.Viewer()
     D0 = 'precomputed://https://rhoana.rc.fas.harvard.edu/ng/hydra/im_w0210'
@@ -53,7 +53,7 @@ if opt[0] == '0':
         #dsp_seg('neuron', ['KR5', 'KR6'])
         #dsp_seg('neuron', ['KR4']);dsp_seg('sv', ['KR4']);dsp_seg('lv', ['KR4'])
         #dsp_seg('neuron', ['KR4']);dsp_seg('vesicle_big', ['KR4'])
-        dsp_seg('vesicle_big', ['KR11'])
-        #dsp_seg('vesicle_im', ['KR5'], 1)
+        dsp_seg('vesicle_big', ['SHL24'])
+        dsp_seg('vesicle_im', ['SHL24'], 1)
         #dsp_seg('neuron', ['RGC7'],2)
     print(viewer)

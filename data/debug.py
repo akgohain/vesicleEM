@@ -31,6 +31,12 @@ elif opt == '1.1': # check bbox
     print(compute_bbox(seg==nid) * np.array([4,32,32]))
     
 elif opt == '1.2':    
+    aa = [x[x.rfind('neuron')+7:x.rfind('3')-1] for x in glob('/data/projects/weilab/dataset/hydra/results/neuron_*_30-8-8.h5')]
+    cc = [x[x.rfind('neuron')+7:x.find('30')-1] for x in glob('/data/projects/weilab/dataset/hydra/results/neuron_*_30-32-32.h5')]
+    for bb in aa:
+        if bb not in cc:
+            print(f'/data/projects/weilab/weidf/lib/miniconda3/envs/emu/bin/python run_local.py -t downsample -i /data/projects/weilab/dataset/hydra/results/neuron_{bb}_30-8-8.h5 -r 1,4,4 -o neuron_{bb}_30-32-32.h5 -cn 10')
+elif opt == '1.21':    
     aa = [x[x.rfind('/')+1:x.rfind('_')] for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*_8nm.h5')]
     #aa = [x[x.rfind('ll_')+3:x.rfind('_30')] for x in glob('/data/projects/weilab/dataset/hydra/results/vesicle_small_*-32.h5')]
     bb = ','.join(aa)
@@ -143,19 +149,23 @@ elif opt == '5':# image volume drift by 128 in xy
 elif opt[0] == '6':
     Dr = '/data/projects/weilab/dataset/hydra/results/'
     nns = ['KR6','NET12','SHL55','KR11','KR10','SHL20','PN3','LUX2','KR4','KR5','KM4','RGC2','SHL17']
-    fn = 'big'
-    # fn = 'small'
+    nns=['NET10','NET11','SHL18','SHL24','SHL28','PN7','RGC7']
+    nns=['SHL24']
+    fns = ['big','small']
     if opt == '6': # vesicle small all 0
         # nns = ['KR5']
         for nn in nns:
-            sn = f'{Dr}vesicle_{fn}_{nn}_30-8-8_patch.h5'
-            if not os.path.exists(sn):
-                print('No', sn)
-            else:
-                im, seg = read_h5(sn)
-                num1 = (im.max(axis=1).max(axis=1).max(axis=1)==0).sum()
-                num2 = (seg.max(axis=1).max(axis=1).max(axis=1)==0).sum()
-                print(nn,num1,num2)
+            for fn in fns:
+                sn = f'{Dr}vesicle_{fn}_{nn}_30-8-8_patch.h5'
+                if not os.path.exists(sn):
+                    print('No', sn)
+                else:
+                    im, seg = read_h5(sn)
+                    num1 = (im.max(axis=1).max(axis=1).max(axis=1)==0).sum()
+                    num2 = (seg.max(axis=1).max(axis=1).max(axis=1)==0).sum()
+                    print(nn,fn,num1,num2)
+                    import pdb; pdb.set_trace()
+                    # bb=read_h5(f'{Dr}vesicle_big-bbs_SHL24_30-8-8.h5')
     elif opt == '6.1': # vesicle small all 0
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
         nn = 'KR11'
