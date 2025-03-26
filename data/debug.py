@@ -6,10 +6,11 @@ from util import *
 from glob import glob
 opt = sys.argv[1]
 
+Dd = '/data/projects/weilab/dataset/hydra/'
 if opt == '0':
     # add 8192 to all bbox: tile_st 1 -> 0
     from glob import glob
-    D0 = '/data/projects/weilab/dataset/hydra/mask_mip1/bbox/'
+    D0 = f'{Dd}mask_mip1/bbox/'
     fns = glob(D0+'*.txt')
     for fn in fns:
         data = np.loadtxt(fn).astype(int)
@@ -181,14 +182,21 @@ elif opt[0] == '6':
         diff = np.abs(bbs-bbs2).max()
         print(diff)
     
-elif opt == '7': # vesicle pf
-    fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/SHL17_8nm.h5'
-    fn = '/data/projects/weilab/dataset/hydra/results/vesicle_big_SHL17_30-8-8.h5'
-    fn = '/data/projects/weilab/dataset/hydra/results/vesicle_small_SHL17_30-8-8.h5'
-    chunk_num = 10
-    
-    vol = h5py.File(fn, 'r')['main']
-    num_z = int(np.ceil(vol.shape[0] / float(chunk_num)))
-    for i in range(chunk_num):
-        seg = np.array(vol[i*num_z:(i+1)*num_z])
-        print(i, seg.max())
+elif opt[0] == '7': # vesicle pf
+    if opt == '7':
+        fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/NET10.h5'
+        #fn = '/data/projects/weilab/dataset/hydra/results/vesicle_big_SHL17_30-8-8.h5'
+        #fn = '/data/projects/weilab/dataset/hydra/results/vesicle_small_SHL17_30-8-8.h5'
+        chunk_num = 20
+        
+        vol = h5py.File(fn, 'r')['main']
+        num_z = int(np.ceil(vol.shape[0] / float(chunk_num)))
+        uid = np.zeros([0])
+        for i in range(chunk_num):
+            seg = np.array(vol[i*num_z:(i+1)*num_z])
+            uid = np.unique(np.hstack([uid, np.unique(seg)]))
+            print(i, seg.max(), len(uid))
+    elif opt == '7.1':
+        rl = vast_meta_relabel(f'{Dd}vesicle_pf/VAST_segmentation_metadata_NET10.txt')
+        print(len(rl),len(np.unique(rl)))
+        import pdb; pdb.set_trace()

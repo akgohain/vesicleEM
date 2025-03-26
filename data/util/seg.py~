@@ -86,7 +86,7 @@ def seg_cc_chunk(seg_file, output_file, output_chunk=8192, dt=np.uint16, \
         max_id += mm    
     
     # compute relabel array
-    relabel_arr = np.arange(max_id+1).astype(dt)
+    relabel_arr = np.arange(max_id+1, dt)
     to_merge = [list(x) for x in relabel.components() if len(x)>1]
     for component in to_merge:
         cid = min(component)

@@ -25,7 +25,7 @@ def vast_meta_relabel(
     # if there is meta data
     print("load meta")
     dd, nn = read_vast_seg(fn)
-    rl = np.arange(1 + dd.shape[0], dtype=np.uint16)
+    rl = np.arange(dd.shape[0], dtype=np.uint16)
     pid = np.unique(dd[:, 13])
     if do_print:
         print(

@@ -39,3 +39,29 @@ if __name__ == "__main__":
             data = read_h5(args.input_file)
             sz = data.shape    
         print(sz)
+    elif args.task == 'neuron-image':
+        # python run_local.py -t neuron-image -n LUX2
+        ratio = [1,1,1]
+        pad = np.array([100,1000,1000])
+        conf = read_yml('conf/param.yml')
+        neuron_id, neuron_name = neuron_to_id_name(conf, args.neuron[0])
+        bb = neuron_id_to_bbox(conf, neuron_id)
+        bb[::2] = np.maximum(bb[::2]-pad, 0)
+        bb[1::2] = np.minimum(bb[1::2]+pad, 0)
+        zyx_sz = [100, 4096// ratio[1], 4096// ratio[2]]
+        bb[:2] = bb[:2] // ratio[0]
+        bb[2:4] = bb[2:4] // ratio[1]
+        bb[4:] = bb[4:] // ratio[2]    
+
+        acc_id, tile_type = False, 'image'
+        def h5_func(vol, z, y, x):            
+            return crop_to_tile(vol, conf, opt, conf['vesicle_zchunk'][z], [y,x])
+
+        mask_data = None
+        if neuron_file is not None:
+            mask_file = h5py.File(neuron_file,'r')
+            mask_data = mask_file['main']
+        out = read_tile_h5_by_bbox(h5Name, bb[0], bb[1]+1, bb[2], bb[3]+1, bb[4], bb[5]+1, \
+                           zyx_sz, zz=[88,40,15], tile_type=tile_type, tile_step=ratio[1:], zstep=ratio[0], \
+                            acc_id=acc_id, output_file=output_file, mask=mask_data, h5_func=h5_func)
+
