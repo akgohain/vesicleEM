@@ -33,7 +33,6 @@ def compute_bbox(seg, do_count=False):
         out += [len(pix_nonzero[0])]
     return out
 
-
 def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1, no_tqdm=False):    
     if chunk_num == 1:
         if isinstance(seg_file):
@@ -51,7 +50,6 @@ def compute_bbox_all_chunk(seg_file, do_count=False, uid=None, chunk_num=1, no_t
                 out = chunk_bbox.copy()
             else:
                 out = merge_bbox_two_matrices(out, chunk_bbox)
-            # import pdb;pdb.set_trace()
         fid.close()
         return out 
     
@@ -257,7 +255,8 @@ def merge_bbox_two_matrices(bbox_matrix_a, bbox_matrix_b, do_sort=True):
     intersect_id = np.in1d(bbox_a_id, bbox_b_id)
     if intersect_id.sum() == 0:
         # no intersection
-        return np.vstack([bbox_matrix_a, bbox_matrix_b])
+        out = np.vstack([bbox_matrix_a, bbox_matrix_b])
+        return out[np.argsort(out[:,0])] 
     
     # not changing the input value
     bbox_mb = bbox_matrix_b.copy() 
