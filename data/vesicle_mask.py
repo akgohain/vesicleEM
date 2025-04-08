@@ -269,7 +269,7 @@ if __name__ == "__main__":
             neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':
-        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -n SHL17 -jn 10 -r 1,4,4
+        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -n SHL17 -cn 10 -r 1,4,4
         for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             if args.input_file =='':

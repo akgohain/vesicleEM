@@ -35,7 +35,7 @@ def seg_add_chunk(input_file, chunk_num=1, add_loc=None, add_val=None, \
             vol_seg = np.array(seg[i*num_z:(i+1)*num_z])
             if seg_remove is not None:
                 vol_seg = seg_remove_id(vol_seg, seg_remove)
-            vol_chunk_val[vol_seg>0] += vol_seg[vol_seg>0]
+            vol_chunk_val[vol_seg>0] = vol_seg[vol_seg>0]
             do_change = True
             
         if do_change:
@@ -86,7 +86,7 @@ def seg_cc_chunk(seg_file, output_file, output_chunk=8192, dt=np.uint16, \
         max_id += mm    
     
     # compute relabel array
-    relabel_arr = np.zeros(max_id+1, dt)
+    relabel_arr = np.arange(max_id+1).astype(dt)
     to_merge = [list(x) for x in relabel.components() if len(x)>1]
     for component in to_merge:
         cid = min(component)
