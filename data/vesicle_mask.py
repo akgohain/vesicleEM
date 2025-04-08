@@ -269,7 +269,7 @@ if __name__ == "__main__":
             neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':
-        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -n SHL17 -cn 10 -r 1,4,4
+        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -n SHL17 -cn 10 -r 1,4,4 -v big
         for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             if args.input_file =='':
@@ -278,16 +278,19 @@ if __name__ == "__main__":
             suffix = arr_to_str(conf['res'])
             sv_file, lv_file = [os.path.join(args.output_folder, f'vesicle_{x}_{neuron_name}_{suffix}.h5') for x in ['small','big']]  
             print(sv_file,lv_file)
-            vesicle_vast_big_vesicle(seg_file, meta_file, \
+            if args.vesicle in ['','big']:
+                vesicle_vast_big_vesicle(seg_file, meta_file, \
                             output_file=lv_file, chunk_num=args.chunk_num)
-            vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
+            if args.vesicle in ['','small']:
+                vesicle_vast_small_vesicle(seg_file, meta_file, output_file=sv_file)
             if max(args.ratio) != 1:
-                # large vesicle direct downsample
                 suffix2 = arr_to_str(np.array(args.ratio)*conf['res'])    
-                sv_file2 = sv_file.replace(suffix, suffix2)            
-                seg_downsample_chunk(sv_file, args.ratio, sv_file2, args.chunk_num)                
-                lv_file2 = lv_file.replace(suffix, suffix2)
-                seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.chunk_num)                
+                if args.vesicle in ['','small']:
+                    sv_file2 = sv_file.replace(suffix, suffix2)            
+                    seg_downsample_chunk(sv_file, args.ratio, sv_file2, args.chunk_num)                
+                if args.vesicle in ['','big']:
+                    lv_file2 = lv_file.replace(suffix, suffix2)
+                    seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.chunk_num)                
         
     elif args.task == 'neuron-vesicle-patch':
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big

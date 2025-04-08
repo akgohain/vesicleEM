@@ -13,9 +13,9 @@ class UnionFind(object):
     union-find algorithm.  Only works if elements are immutable
     objects.
 
-    Worst case for union and find: :math:`(N + M \log^* N)`, with
+    Worst case for union and find: :math:`(N + M log^* N)`, with
     :math:`N` elements and :math:`M` unions. The function
-    :math:`\log^*` is the number of times needed to take :math:`\log`
+    :math:`log^*` is the number of times needed to take :math:`log`
     of a number until reaching 1. In practice, the amortized cost of
     each operation is nearly linear [1]_.
 

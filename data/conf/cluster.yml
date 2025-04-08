@@ -1,6 +1,6 @@
-folder: "/data/projects/weilab/weidf/lib/vesicle_analysis/data"
-python: "/data/projects/weilab/weidf/lib/miniconda3/envs/emu/bin/"
+folder: "/projects/weilab/weidf/lib/vesicle_analysis/data"
+python: "/projects/weilab/weidf/lib/miniconda3/envs/emu/bin/"
 num_cpu: 1
 num_gpu: 0
 memory: 50000
-partition: "shared"
+partition: "medium"

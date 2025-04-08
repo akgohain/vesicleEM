@@ -1,18 +1,18 @@
 res: [30, 8, 8]
 
-mask_folder: "/data/projects/weilab/dataset/hydra/mask_mip1/png/"
-mask_bbox_folder: "/data/projects/weilab/dataset/hydra/mask_mip1/bbox/"
+mask_folder: "/projects/weilab/dataset/hydra/mask_mip1/png/"
+mask_bbox_folder: "/projects/weilab/dataset/hydra/mask_mip1/bbox/"
 mask_template: "Neuron_1_240409_ENDO_no bridge_no ecto.vsseg_export_s{:04d}_Y%d_X%d.png"
-mask_meta: "/data/projects/weilab/dataset/hydra/mask_mip1/meta.txt"
-mask_id: "/data/projects/weilab/dataset/hydra/mask_mip1/neuron_id.txt"
+mask_meta: "/projects/weilab/dataset/hydra/mask_mip1/meta.txt"
+mask_id: "/projects/weilab/dataset/hydra/mask_mip1/neuron_id.txt"
 mask_size: [1830, 8192, 8192]
 
-vesicle_pred_path_big: "/data/projects/weilab/hydra/2024_08_19/tile_{:d}-{:d}/%d-%d_pred.h5"
-vesicle_chunk_path_big: "/data/projects/weilab/hydra/2024_10_01/tile_{:d}-{:d}/%d-%d_pred.h5"
-vesicle_chunk_path_im: "/data/projects/weilab/dataset/hydra/im_chunk/tile_{:d}-{:d}/%d-%d.h5"
+vesicle_pred_path_big: "/projects/weilab/hydra/2024_08_19/tile_{:d}-{:d}/%d-%d_pred.h5"
+vesicle_chunk_path_big: "/projects/weilab/hydra/2024_10_01/tile_{:d}-{:d}/%d-%d_pred.h5"
+vesicle_chunk_path_im: "/projects/weilab/dataset/hydra/im_chunk/tile_{:d}-{:d}/%d-%d.h5"
 vesicle_chunk_size: [4096, 4096]
 vesicle_pad: [8, 128, 128]
-vesicle_zchunk_meta: "/data/projects/weilab/dataset/hydra/im_chunk/tile_{:d}-{:d}.txt"
+vesicle_zchunk_meta: "/projects/weilab/dataset/hydra/im_chunk/tile_{:d}-{:d}.txt"
 vesicle_zchunk:
   [
     [0, 188],
@@ -34,4 +34,4 @@ vesicle_zchunk:
     [1688, 1828],
   ]
 
-result_folder: "/data/projects/weilab/dataset/hydra/results/"
+result_folder: "/projects/weilab/dataset/hydra/results_0408/"
