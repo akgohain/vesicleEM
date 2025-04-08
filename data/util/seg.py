@@ -81,7 +81,7 @@ def seg_cc_chunk(seg_file, output_file, output_chunk=8192, dt=np.uint16, \
             id2 = vol_cc[0][last_slice>0].reshape(-1,1)
             to_merge = np.unique(np.hstack([id1, id2]), axis=0)
             # no merge to 0
-            to_merge = to_merge[to_merge.min(axis==1)!=0]
+            to_merge = to_merge[to_merge.min(axis=1)!=0]
             relabel.union_arr(to_merge)
             bb = np.vstack([bb, bb_chunk])
         last_slice = vol_cc[-1]
