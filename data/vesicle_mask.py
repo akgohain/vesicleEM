@@ -233,9 +233,9 @@ def vesicle_vast_big_vesicle(seg_file, meta_file, dust_size=50, output_file=None
         else:
             seg_func = lambda x: relabel[x]==lv_id            
             # write cc into output file
-            seg_cc_chunk(seg_file, output_file, dt=np.uint16, seg_func=seg_func, chunk_num=chunk_num, no_tqdm=no_tqdm)
+            seg_cc_chunk(seg_file, output_file, dt=np.uint16, seg_func=seg_func, chunk_num=chunk_num, no_tqdm=no_tqdm, dust_size=dust_size)
             seg_rm = [sv_id, lv_id]
-            seg_add_chunk(output_file, chunk_num, 'all', meta_d[-1,0], seg_file, seg_rm, no_tqdm=no_tqdm)
+            seg_add_chunk(output_file, chunk_num, 'all', np.uint16(meta_d[-1,0]), seg_file, seg_rm, no_tqdm=no_tqdm)
             
     
 if __name__ == "__main__":
@@ -291,7 +291,6 @@ if __name__ == "__main__":
                 if args.vesicle in ['','big']:
                     lv_file2 = lv_file.replace(suffix, suffix2)
                     seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.chunk_num)                
-        
     elif args.task == 'neuron-vesicle-patch':
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
         suffix = arr_to_str(conf['res'])
@@ -303,4 +302,4 @@ if __name__ == "__main__":
                 print(neuron_name)
                 patch_sz = [5,31,31] if args.vesicle=='big' else [1,11,11]
                 out = vesicle_instance_crop_chunk(ves_file, im_file, bbs_file, sz=patch_sz, sz_thres=0, chunk_num=args.chunk_num)
-                write_h5(output_file, out)                    
+                write_h5(output_file, out)

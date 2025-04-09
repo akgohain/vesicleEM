@@ -6,7 +6,7 @@ from util import *
 from glob import glob
 opt = sys.argv[1]
 
-Dd = '/data/projects/weilab/dataset/hydra/'
+Dd = '/projects/weilab/dataset/hydra/'
 if opt == '0':
     # add 8192 to all bbox: tile_st 1 -> 0
     from glob import glob
@@ -19,7 +19,7 @@ if opt == '0':
         data[:, 3:] += 8192
         np.savetxt(fn, data, '%d')
 elif opt == '1':    
-    data = read_yml("/data/projects/weilab/dataset/hydra/mask_mip1/neuron_id.txt")
+    data = read_yml("/projects/weilab/dataset/hydra/mask_mip1/neuron_id.txt")
     kk = np.array(list(data.values()))
     print(','.join([str(x) for x in kk]))
     """
@@ -28,29 +28,29 @@ elif opt == '1':
     """
 elif opt == '1.1': # check bbox
     nid = int(sys.argv[2])
-    seg = read_h5("/data/projects/weilab/dataset/hydra/mask_mip5.h5")
+    seg = read_h5("/projects/weilab/dataset/hydra/mask_mip5.h5")
     print(compute_bbox(seg==nid) * np.array([4,32,32]))
     
 elif opt == '1.2':    
-    aa = [x[x.rfind('neuron')+7:x.rfind('3')-1] for x in glob('/data/projects/weilab/dataset/hydra/results/neuron_*_30-8-8.h5')]
-    cc = [x[x.rfind('neuron')+7:x.find('30')-1] for x in glob('/data/projects/weilab/dataset/hydra/results/neuron_*_30-32-32.h5')]
+    aa = [x[x.rfind('neuron')+7:x.rfind('3')-1] for x in glob('/projects/weilab/dataset/hydra/results/neuron_*_30-8-8.h5')]
+    cc = [x[x.rfind('neuron')+7:x.find('30')-1] for x in glob('/projects/weilab/dataset/hydra/results/neuron_*_30-32-32.h5')]
     for bb in aa:
         if bb not in cc:
-            print(f'/data/projects/weilab/weidf/lib/miniconda3/envs/emu/bin/python run_local.py -t downsample -i /data/projects/weilab/dataset/hydra/results/neuron_{bb}_30-8-8.h5 -r 1,4,4 -o neuron_{bb}_30-32-32.h5 -cn 10')
+            print(f'/projects/weilab/weidf/lib/miniconda3/envs/emu/bin/python run_local.py -t downsample -i /projects/weilab/dataset/hydra/results/neuron_{bb}_30-8-8.h5 -r 1,4,4 -o neuron_{bb}_30-32-32.h5 -cn 10')
 elif opt == '1.21':    
-    aa = [x[x.rfind('/')+1:x.rfind('_')] for x in glob('/data/projects/weilab/dataset/hydra/vesicle_pf/*_8nm.h5')]
-    #aa = [x[x.rfind('ll_')+3:x.rfind('_30')] for x in glob('/data/projects/weilab/dataset/hydra/results/vesicle_small_*-32.h5')]
+    aa = [x[x.rfind('/')+1:x.rfind('_')] for x in glob('/projects/weilab/dataset/hydra/vesicle_pf/*_8nm.h5')]
+    #aa = [x[x.rfind('ll_')+3:x.rfind('_30')] for x in glob('/projects/weilab/dataset/hydra/results/vesicle_small_*-32.h5')]
     bb = ','.join(aa)
     print(len(aa),bb)
     # print(f'python neuron_mask.py -t neuron-mask -n {bb}')
     # print(f'python vesicle_mask.py -t neuron-vesicle -n {bb} -v im -p "file_type:h5"')    
-    print(f'python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n {bb} -v small')
+    print(f'python vesicle_mask.py -t neuron-vesicle-patch -ir /projects/weilab/dataset/hydra/results/ -n {bb} -v small')
     """
     for bb in aa:
         #print(f'python run_local.py -t im-to-h5 -p "image_type:seg" -ir "{bb}/*.png"')
         try:
-            s1 = np.array(get_vol_shape(f'/data/projects/weilab/dataset/hydra/results/vesicle_im_{bb}_30-8-8.h5'))
-            s2 = np.array(get_vol_shape(f'/data/projects/weilab/dataset/hydra/vesicle_pf/{bb}_8nm.h5'))
+            s1 = np.array(get_vol_shape(f'/projects/weilab/dataset/hydra/results/vesicle_im_{bb}_30-8-8.h5'))
+            s2 = np.array(get_vol_shape(f'/projects/weilab/dataset/hydra/vesicle_pf/{bb}_8nm.h5'))
             if np.abs(s1-s2).max()!=0:
                 print(bb,s1,s2)
         except:
@@ -59,15 +59,15 @@ elif opt == '1.21':
     """
 elif opt == '1.3':
     aa = ['SHL29','SHL53','SHL52','PN8','SHL26','SHL51','KM2','SHL54']    
-    fn = '/data/projects/weilab/dataset/hydra/results/neuron_%s_30-8-8.h5'
+    fn = '/projects/weilab/dataset/hydra/results/neuron_%s_30-8-8.h5'
     for bb in aa:
         if not os.path.exists(fn%bb):
             print(bb)
         
 elif opt == '2.1':
-    fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/*.h5'; tdt=np.uint16
-    # fn = '/data/projects/weilab/dataset/hydra/results/vesicle_im_*.h5'; tdt=np.uint8
-    fn = '/data/projects/weilab/dataset/hydra/results/sv_*_30-32-32.h5'; tdt=np.uint16
+    fn = '/projects/weilab/dataset/hydra/vesicle_pf/*.h5'; tdt=np.uint16
+    # fn = '/projects/weilab/dataset/hydra/results/vesicle_im_*.h5'; tdt=np.uint8
+    fn = '/projects/weilab/dataset/hydra/results/sv_*_30-32-32.h5'; tdt=np.uint16
     aa = glob(fn)
     for bb in aa:        
         # check dtype and shape
@@ -88,14 +88,14 @@ elif opt == '2.1':
         """
         # generate proofread volume
         fn = bb[bb.rfind('/')+1:bb.rfind('_')]        
-        print(f'python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -i {fn}_8nm.h5,VAST_segmentation_metadata_{fn}.txt -o sv_{fn},lv_{fn} -r 1,4,4')
+        print(f'python vesicle_mask.py -t neuron-vesicle-proofread -ir /projects/weilab/dataset/hydra/vesicle_pf/ -i {fn}_8nm.h5,VAST_segmentation_metadata_{fn}.txt -o sv_{fn},lv_{fn} -r 1,4,4')
         """
 elif opt == '3': # check vast process
     from vesicle_mask import *
     fn = 'KR4'
     # check small vesicle
-    D0 = '/data/projects/weilab/dataset/hydra/vesicle_pf/'
-    Dr = '/data/projects/weilab/dataset/hydra/results/'
+    D0 = '/projects/weilab/dataset/hydra/vesicle_pf/'
+    Dr = '/projects/weilab/dataset/hydra/results/'
     seg_file = f'{D0}{fn}_8nm.h5' 
     meta_file = f'{D0}VAST_segmentation_metadata_{fn}.txt'
     """
@@ -120,7 +120,7 @@ elif opt == '3': # check vast process
 elif opt == '4':    
     from imageio import imwrite
     from skimage.color import label2rgb
-    Dr = '/data/projects/weilab/dataset/hydra/results/'
+    Dr = '/projects/weilab/dataset/hydra/results/'
     nn = 'KR4'
     seg_file = f'{Dr}vesicle_big_{nn}_30-8-8_patch.h5' 
     result = read_h5(seg_file)
@@ -134,21 +134,21 @@ elif opt == '5':# image volume drift by 128 in xy
     from vesicle_mask import crop_to_tile 
     zz, rc = [388,488], [8,13]
     opt = 'im'
-    fn = f'/data/projects/weilab/dataset/hydra/im_chunk/tile_{zz[0]}-{zz[1]}/{rc[0]}-{rc[1]}.h5'
+    fn = f'/projects/weilab/dataset/hydra/im_chunk/tile_{zz[0]}-{zz[1]}/{rc[0]}-{rc[1]}.h5'
     conf = read_yml('conf/param.yml')
     vol = read_h5(fn)
     out = crop_to_tile(vol, conf, opt, zz, rc)
     write_h5('ha.h5', out)
     """
     out = read_h5('ha.h5')
-    out0 = read_h5('/data/projects/weilab/dataset/hydra/im_chunk/tile_388-488/8-13.h5')
+    out0 = read_h5('/projects/weilab/dataset/hydra/im_chunk/tile_388-488/8-13.h5')
     with viewer.txn() as s:
         s.layers.append(name='ii',layer=ng_layer(out, [8,8,30], tt='image',oo=[13*4096,8*4096,388]))
         s.layers.append(name='i0',layer=ng_layer(out0, [8,8,30], tt='image',oo=[13*4096,8*4096,388]))
     """
 
 elif opt[0] == '6':
-    Dr = '/data/projects/weilab/dataset/hydra/results/'
+    Dr = '/projects/weilab/dataset/hydra/results/'
     nns = ['KR6','NET12','SHL55','KR11','KR10','SHL20','PN3','LUX2','KR4','KR5','KM4','RGC2','SHL17']
     nns=['NET10','NET11','SHL18','SHL24','SHL28','PN7','RGC7']
     nns=['SHL24']
@@ -168,7 +168,7 @@ elif opt[0] == '6':
                     import pdb; pdb.set_trace()
                     # bb=read_h5(f'{Dr}vesicle_big-bbs_SHL24_30-8-8.h5')
     elif opt == '6.1': # vesicle small all 0
-        # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
+        # python vesicle_mask.py -t neuron-vesicle-patch -ir /projects/weilab/dataset/hydra/results/ -n KR6 -v big
         nn = 'KR11'
         sn = f'{Dr}vesicle_{fn}_{nn}_30-8-8_patch.h5'
         im, seg = read_h5(sn)
@@ -183,11 +183,13 @@ elif opt[0] == '6':
         print(diff)
     
 elif opt[0] == '7': # vesicle pf
-    if opt == '7':
-        fn = '/data/projects/weilab/dataset/hydra/vesicle_pf/NET10.h5'
-        #fn = '/data/projects/weilab/dataset/hydra/results/vesicle_big_SHL17_30-8-8.h5'
-        #fn = '/data/projects/weilab/dataset/hydra/results/vesicle_small_SHL17_30-8-8.h5'
-        chunk_num = 20
+    nns = ['NET10', 'SHL28', 'RGC7', 'SHL18', 'SHL24', 'KR5', 'SHL55', 'PN7', 'NET11', 'PN3', 'KR4', 'RGC2', 'LUX2', 'NET12', 'KR6', 'KR10', 'SHL20', 'SHL17', 'KM4', 'KR11']
+    nns = ['KM4', 'SHL55', 'KR5', 'KR11', 'PN3', 'KR10', 'NET12', 'KR6', 'KR4', 'NET11', 'PN7', 'RGC2', 'SHL20', 'LUX2']
+    if opt == '7':# check unique id
+        nn = 'KR5'
+        fn = f'{Dd}/vesicle_pf/NET10.h5'
+        fn = f'{Dd}/results_0408/vesicle_big_{nn}_30-32-32.h5'
+        chunk_num = 5
         
         vol = h5py.File(fn, 'r')['main']
         num_z = int(np.ceil(vol.shape[0] / float(chunk_num)))
@@ -197,6 +199,36 @@ elif opt[0] == '7': # vesicle pf
             uid = np.unique(np.hstack([uid, np.unique(seg)]))
             print(i, seg.max(), len(uid))
     elif opt == '7.1':
-        rl = vast_meta_relabel(f'{Dd}vesicle_pf/VAST_segmentation_metadata_NET10.txt')
-        print(len(rl),len(np.unique(rl)))
+        from scipy.spatial.distance import cdist
+        for nn in nns:
+            nn = 'PN7'
+            vd, vn = read_vast_seg(f'{Dd}vesicle_pf/VAST_segmentation_metadata_{nn}.txt')
+            mm = vd[-1,0]
+            bb0 = read_h5(f'{Dd}results/vesicle_big-bbs_{nn}_30-8-8.h5')
+            bb = read_h5(f'{Dd}results_0408/vesicle_big-bbs_{nn}_30-8-8.h5')
+            print(nn, len(bb), len(bb0),)
+            bb0 = bb0[bb0[:,0]>mm]
+            ind_mm = bb[:,0]>mm
+            bb = bb[ind_mm]
+            #ind = np.in1d(bb[:,0],bb0[:,0])
+            #ind2 = np.in1d(bb0[:,0],bb[:,0])
+            dis = cdist(bb0[:,1:], bb[:,1:], 'cityblock')
+            ind = dis.min(axis=0)!=0
+            print(ind.sum())
+            write_h5(f'{Dd}results_0408/extra_patch/vesicle_big-bbs_{nn}_30-8-8.h5',bb[ind])
+            patch = read_h5(f'{Dd}results_0408/vesicle_big_{nn}_30-8-8_patch.h5')
+            import pdb; pdb.set_trace()
+            patch[0] = patch[0][ind_mm][ind]
+            patch[1] = patch[1][ind_mm][ind]
+            write_h5(f'{Dd}results_0408/extra_patch/vesicle_big_{nn}_30-8-8_patch.h5',patch)
+
+            yy, xx = np.where(dis==0)
+            rl = np.zeros(bb0[-1,0]+1, np.uint16)
+            rl[:mm+1] = np.arange(mm+1)
+            rl[bb0[yy,0]] = bb[xx,0]
+            write_h5(f'{Dd}results_0408/extra_patch/vesicle_big_{nn}_30-8-8_rl.h5',rl)
+    elif opt == '7.2':# check unique id
+        from glob import glob
+        fns = [x[x.find('big')+4:-12] for x in glob(Dd+'results_0408/vesicle_big_*_30-32-32.h5')]
+        print()
         import pdb; pdb.set_trace()
