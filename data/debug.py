@@ -184,7 +184,9 @@ elif opt[0] == '6':
     
 elif opt[0] == '7': # vesicle pf
     nns = ['NET10', 'SHL28', 'RGC7', 'SHL18', 'SHL24', 'KR5', 'SHL55', 'PN7', 'NET11', 'PN3', 'KR4', 'RGC2', 'LUX2', 'NET12', 'KR6', 'KR10', 'SHL20', 'SHL17', 'KM4', 'KR11']
-    nns = ['KM4', 'SHL55', 'KR5', 'KR11', 'PN3', 'KR10', 'NET12', 'KR6', 'KR4', 'NET11', 'PN7', 'RGC2', 'SHL20', 'LUX2']
+    nns = ['SHL17','RGC7','SHL24','SHL28','NET10']
+    nns = ['SHL18']
+    nns = ['NET11']
     if opt == '7':# check unique id
         nn = 'KR5'
         fn = f'{Dd}/vesicle_pf/NET10.h5'
@@ -201,34 +203,37 @@ elif opt[0] == '7': # vesicle pf
     elif opt == '7.1':
         from scipy.spatial.distance import cdist
         for nn in nns:
-            nn = 'PN7'
             vd, vn = read_vast_seg(f'{Dd}vesicle_pf/VAST_segmentation_metadata_{nn}.txt')
             mm = vd[-1,0]
             bb0 = read_h5(f'{Dd}results/vesicle_big-bbs_{nn}_30-8-8.h5')
             bb = read_h5(f'{Dd}results_0408/vesicle_big-bbs_{nn}_30-8-8.h5')
             print(nn, len(bb), len(bb0),)
-            bb0 = bb0[bb0[:,0]>mm]
-            ind_mm = bb[:,0]>mm
-            bb = bb[ind_mm]
+            # bb0 = bb0[bb0[:,0]>mm]
+            # ind_mm = bb[:,0]>mm
+            # bb = bb[ind_mm]
             #ind = np.in1d(bb[:,0],bb0[:,0])
             #ind2 = np.in1d(bb0[:,0],bb[:,0])
-            dis = cdist(bb0[:,1:], bb[:,1:], 'cityblock')
-            ind = dis.min(axis=0)!=0
+            if len(bb0) == 0:
+                ind = bb[:,0]>0
+            else:
+                dis = cdist(bb0[:,1:], bb[:,1:], 'cityblock')
+                ind = dis.min(axis=0)!=0
             print(ind.sum())
-            write_h5(f'{Dd}results_0408/extra_patch/vesicle_big-bbs_{nn}_30-8-8.h5',bb[ind])
-            patch = read_h5(f'{Dd}results_0408/vesicle_big_{nn}_30-8-8_patch.h5')
-            import pdb; pdb.set_trace()
-            patch[0] = patch[0][ind_mm][ind]
-            patch[1] = patch[1][ind_mm][ind]
-            write_h5(f'{Dd}results_0408/extra_patch/vesicle_big_{nn}_30-8-8_patch.h5',patch)
+            if ind.sum()>0:
+                write_h5(f'{Dd}results_0408/extra_patch/vesicle_big-bbs_{nn}_30-8-8.h5',bb[ind])
+                patch = read_h5(f'{Dd}results_0408/vesicle_big_{nn}_30-8-8_patch.h5')
+                patch[0] = patch[0][ind]
+                patch[1] = patch[1][ind]
+                write_h5(f'{Dd}results_0408/extra_patch/vesicle_big_{nn}_30-8-8_patch.h5',patch)
 
-            yy, xx = np.where(dis==0)
-            rl = np.zeros(bb0[-1,0]+1, np.uint16)
-            rl[:mm+1] = np.arange(mm+1)
-            rl[bb0[yy,0]] = bb[xx,0]
-            write_h5(f'{Dd}results_0408/extra_patch/vesicle_big_{nn}_30-8-8_rl.h5',rl)
+                if len(bb0) != 0:
+                    yy, xx = np.where(dis==0)
+                    rl = np.arange(bb0[:,0].max()+1).astype(np.uint16)
+                    #rl[:mm+1] = np.arange(mm+1)
+                    rl[bb0[yy,0]] = bb[xx,0]
+                    write_h5(f'{Dd}results_0408/extra_patch/vesicle_big_{nn}_30-8-8_rl.h5',rl)
     elif opt == '7.2':# check unique id
         from glob import glob
         fns = [x[x.find('big')+4:-12] for x in glob(Dd+'results_0408/vesicle_big_*_30-32-32.h5')]
-        print()
+        print('","'.join(fns))
         import pdb; pdb.set_trace()

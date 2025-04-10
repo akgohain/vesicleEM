@@ -91,7 +91,7 @@ def vesicle_instance_crop_chunk(ves_file, im_file=None, bbs_file=None, ves_label
     #for aa,bb in enumerate(bbs):
     for bb in tqdm(bbs, disable=no_tqdm):
         # remove small xy size
-        if bb[3:].min() > sz_thres:
+        if (bb[4::2]-bb[3::2]).min() >= sz_thres:
             if ves_label is not None:
                 tmp = ves_label[ves==bb[0]]
                 # ideally, tmp>0, but some VAST modification
@@ -269,7 +269,7 @@ if __name__ == "__main__":
             neuron_id_to_vesicle(conf, neuron_id, args.ratio, args.vesicle, output_file, neuron_file)
 
     elif args.task == 'neuron-vesicle-proofread':
-        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /data/projects/weilab/dataset/hydra/vesicle_pf/ -n SHL17 -cn 10 -r 1,4,4 -v big
+        # python vesicle_mask.py -t neuron-vesicle-proofread -ir /projects/weilab/dataset/hydra/vesicle_pf/ -n SHL18 -cn 20 -r 1,4,4 -v big
         for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
             if args.input_file =='':
@@ -292,7 +292,7 @@ if __name__ == "__main__":
                     lv_file2 = lv_file.replace(suffix, suffix2)
                     seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.chunk_num)                
     elif args.task == 'neuron-vesicle-patch':
-        # python vesicle_mask.py -t neuron-vesicle-patch -ir /data/projects/weilab/dataset/hydra/results/ -n KR6 -v big
+        # python vesicle_mask.py -t neuron-vesicle-patch -ir /projects/weilab/dataset/hydra/results_0408/ -n KR6 -v big -cn 10
         suffix = arr_to_str(conf['res'])
         for neuron in args.neuron[args.job_id::args.job_num]:
             neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
