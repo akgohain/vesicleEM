@@ -1,6 +1,6 @@
 [submodule "hydra"]
 	path = ves_unsup
-	url = git@github.com:jasonkena/hydra.git
+	url = https://github.com/jasonkena/hydra.git
 [submodule "ves_analysis"]
 	path = ves_analysis
 	url = https://github.com/gnuoyea/hydra_micaela.git
