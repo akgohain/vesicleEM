@@ -19,7 +19,3 @@ The analysis is performed in a Python environment. The key dependencies are:
 * gower
 * matplotlib (for plotting)
 * scikit-learn (for MDS)
-
-The notebook includes a command to install the `gower` library:
-```bash
-!pip3 install gower
