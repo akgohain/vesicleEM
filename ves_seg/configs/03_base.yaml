@@ -1,0 +1,49 @@
+SYSTEM:
+  NUM_GPUS: 1
+  NUM_CPUS: 64
+  DISTRIBUTED: True
+  PARALLEL: 'DDP'
+MODEL:
+  ARCHITECTURE: unet_3d
+  BLOCK_TYPE: residual_se
+  INPUT_SIZE: [9, 65, 65]
+  OUTPUT_SIZE: [9, 65, 65]
+  NORM_MODE: gn
+  IN_PLANES: 1
+  MIXED_PRECESION: False
+  FILTERS: [32, 64, 96, 128]
+  ISOTROPY: [False, False, False, True]
+DATASET:
+  INPUT_PATH: /mmfs1/data/linok/hydra/datasets/large_vesicle
+  IMAGE_NAME: 01-initial/vol0_clahe.h5@01-initial/vol1_clahe.h5@01-initial/vol2_clahe.h5@03-finetune/vol_10_im0_clahe.h5@03-finetune/vol_10_im1_clahe.h5@03-finetune/vol_11_im0_clahe.h5@03-finetune/vol_11_im1_clahe.h5@03-finetune/vol_11_im2_clahe.h5@03-finetune/vol_12_im0_clahe.h5@03-finetune/vol_12_im1_clahe.h5@03-finetune/vol_12_im2_clahe.h5@03-finetune/vol_12_im3_clahe.h5@03-finetune/vol_12_im4_clahe.h5@03-finetune/vol_12_im5_clahe.h5@03-finetune/vol_13_im0_clahe.h5@03-finetune/vol_13_im1_clahe.h5@03-finetune/vol_13_im2_clahe.h5@03-finetune/vol_14_im0_clahe.h5@03-finetune/vol_14_im1_clahe.h5@03-finetune/vol_14_im2_clahe.h5@03-finetune/vol_14_im3_clahe.h5@03-finetune/vol_14_im4_clahe.h5@03-finetune/vol_15_im_clahe.h5@05-tile_0-188/6-12_clahe1.h5@05-tile_0-188/6-12_clahe2.h5@05-tile_0-188/6-12_clahe4.h5@05-tile_0-188/6-13_clahe1.h5@05-tile_0-188/6-13_clahe2.h5@05-tile_0-188/6-13_clahe3.h5@05-tile_0-188/6-13_clahe4.h5@05-tile_0-188/6-13_clahe5.h5@05-tile_0-188/6-13_clahe6.h5@05-tile_0-188/6-13_clahe7.h5
+  LABEL_NAME: 01-initial/vol0_ves.h5@01-initial/vol1_ves.h5@01-initial/vol2_ves.h5@03-finetune/vol_10_ves0.h5@03-finetune/vol_10_ves1.h5@03-finetune/vol_11_ves0.h5@03-finetune/vol_11_ves1.h5@03-finetune/vol_11_ves2.h5@03-finetune/vol_12_ves0.h5@03-finetune/vol_12_ves1.h5@03-finetune/vol_12_ves2.h5@03-finetune/vol_12_ves3.h5@03-finetune/vol_12_ves4.h5@03-finetune/vol_12_ves5.h5@03-finetune/vol_13_ves0.h5@03-finetune/vol_13_ves1.h5@03-finetune/vol_13_ves2.h5@03-finetune/vol_14_ves0.h5@03-finetune/vol_14_ves1.h5@03-finetune/vol_14_ves2.h5@03-finetune/vol_14_ves3.h5@03-finetune/vol_14_ves4.h5@03-finetune/vol_15_ves.h5@05-tile_0-188/6-12_ves1.h5@05-tile_0-188/6-12_ves2.h5@05-tile_0-188/6-12_ves4.h5@05-tile_0-188/6-13_ves1.h5@05-tile_0-188/6-13_ves2.h5@05-tile_0-188/6-13_ves3.h5@05-tile_0-188/6-13_ves4.h5@05-tile_0-188/6-13_ves5.h5@05-tile_0-188/6-13_ves6.h5@05-tile_0-188/6-13_ves7.h5
+  VALID_MASK_NAME: 01-initial/vol0_mask.h5@01-initial/vol1_mask.h5@01-initial/vol2_mask.h5@03-finetune/vol_10_mask0.h5@03-finetune/vol_10_mask1.h5@03-finetune/vol_11_mask0.h5@03-finetune/vol_11_mask1.h5@03-finetune/vol_11_mask2.h5@03-finetune/vol_12_mask0.h5@03-finetune/vol_12_mask1.h5@03-finetune/vol_12_mask2.h5@03-finetune/vol_12_mask3.h5@03-finetune/vol_12_mask4.h5@03-finetune/vol_12_mask5.h5@03-finetune/vol_13_mask0.h5@03-finetune/vol_13_mask1.h5@03-finetune/vol_13_mask2.h5@03-finetune/vol_14_mask0.h5@03-finetune/vol_14_mask1.h5@03-finetune/vol_14_mask2.h5@03-finetune/vol_14_mask3.h5@03-finetune/vol_14_mask4.h5@03-finetune/vol_15_mask.h5@05-tile_0-188/6-12_mask1.h5@05-tile_0-188/6-12_mask2.h5@05-tile_0-188/6-12_mask4.h5@05-tile_0-188/6-13_mask1.h5@05-tile_0-188/6-13_mask2.h5@05-tile_0-188/6-13_mask3.h5@05-tile_0-188/6-13_mask4.h5@05-tile_0-188/6-13_mask5.h5@05-tile_0-188/6-13_mask6.h5@05-tile_0-188/6-13_mask7.h5
+  REDUCE_LABEL: False
+  OUTPUT_PATH: /mmfs1/data/linok/hydra/outputs/large_vesicle/04-more_data
+  PAD_SIZE: [0, 0, 0]
+  DATA_SCALE: [1.0, 1.0, 1.0]
+  VALID_RATIO: 0.1
+  DISTRIBUTED: False
+  #REJECT_SAMPLING:
+  #    NUM_TRIAL: 5
+SOLVER:
+  LR_SCHEDULER_NAME: WarmupCosineLR
+  BASE_LR: 0.02
+  ITERATION_STEP: 1
+  ITERATION_SAVE: 10000
+  ITERATION_TOTAL: 1000000
+  SAMPLES_PER_BATCH: 96
+MONITOR:
+  ITERATION_NUM: [40, 400]
+INFERENCE:
+  INPUT_SIZE: [9, 65, 65]
+  OUTPUT_SIZE: [9, 65, 65]
+  INPUT_PATH: /data/projects/weilab/dataset/hydra/big_vesicle/v0-intial_dataset
+  OUTPUT_PATH: outputs/large_vesicle/initial_volumes/results
+  IMAGE_NAME: vol0_im.h5
+  OUTPUT_NAME: vol0_inf.h5
+  PAD_SIZE: [0, 0, 0]
+  AUG_MODE: "mean"
+  AUG_NUM: 4
+  STRIDE: [4, 32, 32]
+  SAMPLES_PER_BATCH: 24

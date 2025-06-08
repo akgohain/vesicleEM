@@ -1,0 +1,45 @@
+SYSTEM:
+  NUM_GPUS: 1
+  NUM_CPUS: 16
+MODEL:
+  ARCHITECTURE: unet_3d
+  BLOCK_TYPE: residual_se
+  INPUT_SIZE: [9, 65, 65]
+  OUTPUT_SIZE: [9, 65, 65]
+  NORM_MODE: gn
+  IN_PLANES: 1
+  MIXED_PRECESION: False
+  FILTERS: [32, 64, 96, 128, 160]
+  ISOTROPY: [False, False, False, True, True]
+DATASET:
+  INPUT_PATH: /mmfs1/data/linok/hydra/datasets/large_vesicle
+  IMAGE_NAME: 01-initial/vol0_clahe.h5@01-initial/vol1_clahe.h5@01-initial/vol2_clahe.h5
+  LABEL_NAME: 01-initial/vol0_ves.h5@01-initial/vol1_ves.h5@01-initial/vol2_ves.h5
+  VALID_MASK_NAME: 01-initial/vol0_mask.h5@01-initial/vol1_mask.h5@01-initial/vol2_mask.h5
+  REDUCE_LABEL: False
+  OUTPUT_PATH: /mmfs1/data/linok/hydra/outputs/large_vesicle/01-initial
+  PAD_SIZE: [0, 0, 0]
+  DATA_SCALE: [1.0, 1.0, 1.0]
+  VALID_RATIO: 0.1
+  DISTRIBUTED: False
+SOLVER:
+  LR_SCHEDULER_NAME: WarmupCosineLR
+  BASE_LR: 0.02
+  ITERATION_STEP: 1
+  ITERATION_SAVE: 10000
+  ITERATION_TOTAL: 100000
+  SAMPLES_PER_BATCH: 64
+MONITOR:
+  ITERATION_NUM: [40, 400]
+INFERENCE:
+  INPUT_SIZE: [9, 65, 65]
+  OUTPUT_SIZE: [9, 65, 65]
+  INPUT_PATH: /data/projects/weilab/dataset/hydra/big_vesicle/v0-intial_dataset
+  OUTPUT_PATH: outputs/large_vesicle/initial_volumes/results
+  IMAGE_NAME: vol0_im.h5
+  OUTPUT_NAME: vol0_inf.h5
+  PAD_SIZE: [0, 0, 0]
+  AUG_MODE: "mean"
+  AUG_NUM: 4
+  STRIDE: [4, 32, 32]
+  SAMPLES_PER_BATCH: 24

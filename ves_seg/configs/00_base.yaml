@@ -1,0 +1,45 @@
+SYSTEM:
+  NUM_GPUS: 1
+  NUM_CPUS: 16
+MODEL:
+  ARCHITECTURE: unet_3d
+  BLOCK_TYPE: residual_se
+  INPUT_SIZE: [9, 65, 65]
+  OUTPUT_SIZE: [9, 65, 65]
+  NORM_MODE: gn
+  IN_PLANES: 1
+  MIXED_PRECESION: False
+  FILTERS: [32, 64, 96, 128, 160]
+  ISOTROPY: [False, False, False, True, True]
+DATASET:
+  INPUT_PATH: input_dir
+  IMAGE_NAME: train_img1.h5@train_img2.h5@train_img3.h5
+  LABEL_NAME: train_gt1.h5@train_gt2.h5@train_gt3.h5
+  VALID_MASK_NAME: train_mask1.h5@train_mask2.h5@train_mask3.h5
+  REDUCE_LABEL: False
+  OUTPUT_PATH: output_dir
+  PAD_SIZE: [0, 0, 0]
+  DATA_SCALE: [1.0, 1.0, 1.0]
+  VALID_RATIO: 0.1
+  DISTRIBUTED: False
+SOLVER:
+  LR_SCHEDULER_NAME: WarmupCosineLR
+  BASE_LR: 0.02
+  ITERATION_STEP: 1
+  ITERATION_SAVE: 10000
+  ITERATION_TOTAL: 100000
+  SAMPLES_PER_BATCH: 64
+MONITOR:
+  ITERATION_NUM: [40, 400]
+INFERENCE:
+  INPUT_SIZE: [9, 65, 65]
+  OUTPUT_SIZE: [9, 65, 65]
+  INPUT_PATH: input_dir
+  OUTPUT_PATH: output_dir
+  IMAGE_NAME: infer_im.h5
+  OUTPUT_NAME: infer_pred.h5
+  PAD_SIZE: [0, 0, 0]
+  AUG_MODE: "mean"
+  AUG_NUM: 4
+  STRIDE: [4, 32, 32]
+  SAMPLES_PER_BATCH: 24
