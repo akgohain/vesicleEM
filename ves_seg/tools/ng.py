@@ -13,16 +13,16 @@ viewer=neuroglancer.Viewer()
 
 
 def screenshot(path='temp.png', save=True, show=True, size=None):
-"""
-screenshot: use the screenshot capabilities built into neuroglancer to take high-resolution screenshots
-note that neuroglancer has to load in visible layers before taking a screenshot, so this function may hang on larger volumes
-
-Inputs:
-    path (str): the path to save the screenshot to
-    save (bool): whether or not to save the screenshot to path
-    show (bool): whether or not to show the screenshot with matplotlib
-    size ([int, int]): force a specific size of the screenshot. larger size leads to a larger FOV for the screenshot
-"""
+    """
+    screenshot: use the screenshot capabilities built into neuroglancer to take high-resolution screenshots
+    note that neuroglancer has to load in visible layers before taking a screenshot, so this function may hang on larger volumes
+    
+    Inputs:
+        path (str): the path to save the screenshot to
+        save (bool): whether or not to save the screenshot to path
+        show (bool): whether or not to show the screenshot with matplotlib
+        size ([int, int]): force a specific size of the screenshot. larger size leads to a larger FOV for the screenshot
+    """
     if size == None: 
         ss = viewer.screenshot().screenshot.image_pixels
     else:
