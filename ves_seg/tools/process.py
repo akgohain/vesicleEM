@@ -281,3 +281,6 @@ def infer_and_stats(
    
     # return the list of metrics
     return metric_list
+
+if __name__ == '__main__':
+   do_inference('sample/7-13_clahe.h5', 'sample/7-13_pred.h5', ['configs/03_base.yaml', 'configs/bcd_config.yaml'], 'outputs/checkpoint_1000000.pth.tar', show=True) 

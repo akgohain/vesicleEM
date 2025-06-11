@@ -8,9 +8,8 @@ from matplotlib import pyplot as plt
 from skimage import morphology
 
 import neuroglancer
-ip = 'localhost' # f'{hostname}.cm.cluster'
-port = 9098 # change to an unused port number
-neuroglancer.set_server_bind_address(bind_address=ip,bind_port=port)
+port = 9098
+neuroglancer.set_server_bind_address(bind_address='localhost',bind_port=port)
 viewer=neuroglancer.Viewer()
 
 def screenshot(path='temp.png', save=True, show=True, size=None):
@@ -24,8 +23,8 @@ def screenshot(path='temp.png', save=True, show=True, size=None):
         plt.imshow(ss)
         plt.show()
 
-data_dir = '.'
-vol_name = '11-5'
+data_dir = 'sample'
+vol_name = '7-13'
 
 clahe = readvol(os.path.join(data_dir, vol_name+"_clahe.h5"))
 mask = readvol(os.path.join(data_dir, vol_name+"_mask.h5"))

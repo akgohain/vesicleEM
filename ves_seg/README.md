@@ -21,21 +21,25 @@ To continue retraining from a checkpoint, use:
 
 Inference tools are available in `tools/process.py`. To do inference, in a Python shell or file, run:
 
-`> do_inference(<im_path>, <pred_path>, [<base_config.yaml>, <bcd_config.yaml>], <checkpoint_path>)`
+`do_inference(<im_path>, <pred_path>, [<base_config.yaml>, <bcd_config.yaml>], <checkpoint_path>)`
 
 To also get adapted rand, precison, and recall metrics, run:
 
-`> infer_and_stats([<im_path1>, ...], [<pred_path1>, ...], [<mask_path1, ...>], [<base_config.yaml>, <bcd_config.yaml>], <checkpoint_path>), 
+`infer_and_stats([<im_path1>, ...], [<pred_path1>, ...], [<mask_path1, ...>], [<base_config.yaml>, <bcd_config.yaml>], <checkpoint_path>), 
 `
 
 Our final model checkpoint is provided at `outputs/checkpoint_1000000.pth.tar`.
 
 ## Visualiztion
 
-Visualing predictions is done with neuroglancer. To load a volume and its segmentation, modify the file `scripts/ng.py`, then run `python -i scripts/ng.py`. A link to view neuroglancer will open. If running on a remote cluster, please note that port forwarding will be necessary to view on your machine. The `screnshot()` function can be used to take high-resolution screenshots of the neuroglancer representation.
+Visualing predictions is done with neuroglancer. To load a volume and its segmentation, modify the file `scripts/ng.py`, then run `python -i scripts/ng.py`. A link to view neuroglancer will open. If running on a remote cluster, please note that port forwarding will be necessary to view on your machine. The `screenshot()` function can be used to take high-resolution screenshots of the neuroglancer representation.
 
 Further documentation for both functions is contained in `tools/process.py`
 
 ## Sample
 
-A small sample is prepared in the `sample` directory. `11-5` shows a small inter-neuron region with an assortment of large vesicles. Neuroglancer scripts that display the CLAHE-enhanced images, neuron mask, ground truth, and predictions with the final model checkpoints are prepared in `sample/11-5_ng.py`.
+A small sample is prepared in the `sample` directory. `7-13` shows a small soma region with large vesicles. To generate large vesicle predictions in the regionm, run the following command from within the root directory:
+
+`python tools/process.py`
+
+After inference, a neuroglancer script that display the CLAHE-enhanced images, neuron mask, ground truth, and predictions with the final model checkpoints can be viewed by running `sample/ng.py` from within the root directory.
