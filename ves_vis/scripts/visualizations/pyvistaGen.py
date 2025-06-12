@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 PyVista Visualization Generation Script
 
