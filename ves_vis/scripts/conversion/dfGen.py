@@ -6,6 +6,7 @@ import polars as pl
 import numpy as np
 from scipy.spatial import KDTree
 from tqdm import tqdm
+import argparse
 
 def extract_vesicle_data(
     input_path,
@@ -209,3 +210,84 @@ def extract_vesicle_data(
         print("Extraction process complete.")
 
     return df
+
+def main():
+    """Main function to handle command-line arguments and run the extraction."""
+    parser = argparse.ArgumentParser(
+        description="Extract vesicle data from mapping files",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    parser.add_argument(
+        "input_path",
+        type=str,
+        help="Path to a *_mapping.txt file or directory containing such files"
+    )
+    
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default="vesicle_com_data.parquet",
+        help="Output file path (.parquet, .csv, or .json)"
+    )
+    
+    parser.add_argument(
+        "-t", "--types-dir",
+        type=str,
+        default=None,
+        help="Directory containing *_label.txt files for type labels"
+    )
+    
+    parser.add_argument(
+        "-n", "--compute-neighbors",
+        action="store_true",
+        help="Compute neighbor densities within specified radius"
+    )
+    
+    parser.add_argument(
+        "-r", "--neighbor-radius",
+        type=float,
+        default=500.0,
+        help="Radius in nanometers for neighbor search"
+    )
+    
+    parser.add_argument(
+        "-d", "--voxel-dims",
+        type=float,
+        nargs=3,
+        default=[30.0, 8.0, 8.0],
+        metavar=("X", "Y", "Z"),
+        help="Voxel dimensions in nanometers (X Y Z)"
+    )
+    
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress verbose output"
+    )
+    
+    args = parser.parse_args()
+    
+    try:
+        df = extract_vesicle_data(
+            input_path=args.input_path,
+            output_path=args.output,
+            types_dir=args.types_dir,
+            compute_neighbors=args.compute_neighbors,
+            neighbor_radius_nm=args.neighbor_radius,
+            voxel_dims_nm=tuple(args.voxel_dims),
+            verbose=not args.quiet
+        )
+        
+        if not args.quiet:
+            print(f"\nProcessing complete! Final DataFrame shape: {df.shape}")
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+    
+    return 0
+
+
+if __name__ == "__main__":
+    exit(main())

@@ -1,7 +1,16 @@
+#!/usr/bin/env python3
+"""
+Plotly Visualization Generation Script
+
+Creates interactive 3D Plotly visualizations of vesicle data with optional neuron meshes.
+Supports filtering, coloring, and HTML output for web-based viewing.
+"""
+
 import polars as pl
 import trimesh
 import plotly.graph_objects as go
 import numpy as np
+import argparse
 from pathlib import Path
 from matplotlib import cm
 from matplotlib import colors as mcolors
@@ -138,3 +147,111 @@ def vesicles_to_plotly(
         fig.show()
 
     return fig
+
+def main():
+    """Main function to handle command-line arguments and generate Plotly visualization."""
+    parser = argparse.ArgumentParser(
+        description="Generate interactive 3D Plotly visualization of vesicle and neuron data",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    parser.add_argument(
+        "parquet_path",
+        type=str,
+        help="Path to parquet file containing vesicle data (must have x, y, z columns)"
+    )
+    
+    parser.add_argument(
+        "-n", "--neuron-mesh",
+        type=str,
+        default=None,
+        help="Path to neuron mesh file (.obj, .ply, .glb, etc.)"
+    )
+    
+    parser.add_argument(
+        "-s", "--sample-id",
+        type=str,
+        default=None,
+        help="Filter vesicles by specific sample_id"
+    )
+    
+    parser.add_argument(
+        "-c", "--color-by",
+        type=str,
+        default=None,
+        help="Column name to base colors on (e.g., 'type', 'volume')"
+    )
+    
+    parser.add_argument(
+        "-m", "--colormap",
+        type=str,
+        default="viridis",
+        help="Matplotlib colormap name for coloring"
+    )
+    
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default=None,
+        help="Output HTML file path (if not specified, opens in browser)"
+    )
+    
+    parser.add_argument(
+        "--marker-size",
+        type=int,
+        default=3,
+        help="Size of vesicle markers"
+    )
+    
+    parser.add_argument(
+        "--neuron-opacity",
+        type=float,
+        default=0.3,
+        help="Opacity of neuron mesh (0.0 to 1.0)"
+    )
+    
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress verbose output"
+    )
+    
+    args = parser.parse_args()
+    
+    # Validate input file
+    if not Path(args.parquet_path).is_file():
+        print(f"Error: Parquet file not found: {args.parquet_path}")
+        return 1
+    
+    if args.neuron_mesh and not Path(args.neuron_mesh).is_file():
+        print(f"Error: Neuron mesh file not found: {args.neuron_mesh}")
+        return 1
+    
+    try:
+        fig = vesicles_to_plotly(
+            parquet_path=args.parquet_path,
+            neuron_mesh_path=args.neuron_mesh,
+            filter_sample_id=args.sample_id,
+            color_by=args.color_by,
+            colormap=args.colormap,
+            output_html_path=args.output,
+            marker_size=args.marker_size,
+            verbose=not args.quiet,
+            neuron_opacity=args.neuron_opacity
+        )
+        
+        if not args.quiet:
+            if args.output:
+                print(f"\n✅ Interactive Plotly visualization saved to: {args.output}")
+            else:
+                print(f"\n✅ Interactive Plotly visualization opened in browser!")
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+    
+    return 0
+
+
+if __name__ == "__main__":
+    exit(main())

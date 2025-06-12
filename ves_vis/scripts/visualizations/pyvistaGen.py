@@ -1,8 +1,18 @@
+#!/usr/bin/env python3
+"""
+PyVista Visualization Generation Script
+
+Creates 3D visualizations of neuron and vesicle meshes using PyVista.
+Supports interactive viewing and screenshot generation with customizable camera positions.
+"""
+
 import os
 import csv
 import trimesh
 import numpy as np
 import pyvista as pv
+import argparse
+from pathlib import Path
 
 # TODO: logging with tqdm
 # TODO: generalize beyond obj
@@ -197,3 +207,108 @@ def render_scene(neuron_mesh_dir, vesicle_mesh_dir, offsets_csv, show_plotter=Tr
         plotter.show()
     else:
         img = plotter.show(screenshot=screenshot_path)
+
+def main():
+    """Main function to handle command-line arguments and render PyVista scene."""
+    parser = argparse.ArgumentParser(
+        description="Render 3D scene of neuron and vesicle meshes using PyVista",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    parser.add_argument(
+        "neuron_mesh_dir",
+        type=str,
+        help="Directory containing neuron mesh files (.obj format)"
+    )
+    
+    parser.add_argument(
+        "vesicle_mesh_dir",
+        type=str,
+        help="Directory containing vesicle mesh files (.obj format)"
+    )
+    
+    parser.add_argument(
+        "offsets_csv",
+        type=str,
+        help="CSV file with neuron offsets (columns: name, x, y, z)"
+    )
+    
+    parser.add_argument(
+        "--no-interactive",
+        action="store_true",
+        help="Disable interactive display (save screenshot only)"
+    )
+    
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default="scene.png",
+        help="Screenshot output path (used when --no-interactive is set)"
+    )
+    
+    parser.add_argument(
+        "--camera-position",
+        type=str,
+        default=None,
+        choices=["xy", "xz", "yz", "-xy", "-xz", "-yz"],
+        help="Predefined camera position"
+    )
+    
+    parser.add_argument(
+        "--camera-custom",
+        type=float,
+        nargs=9,
+        metavar=("CX", "CY", "CZ", "FX", "FY", "FZ", "UX", "UY", "UZ"),
+        help="Custom camera position: camera_pos focal_point view_up (9 values)"
+    )
+    
+    args = parser.parse_args()
+    
+    # Validate input paths
+    if not Path(args.neuron_mesh_dir).is_dir():
+        print(f"Error: Neuron mesh directory not found: {args.neuron_mesh_dir}")
+        return 1
+    
+    if not Path(args.vesicle_mesh_dir).is_dir():
+        print(f"Error: Vesicle mesh directory not found: {args.vesicle_mesh_dir}")
+        return 1
+    
+    if not Path(args.offsets_csv).is_file():
+        print(f"Error: Offsets CSV file not found: {args.offsets_csv}")
+        return 1
+    
+    # Parse camera position
+    camera_position = None
+    if args.camera_custom:
+        camera_position = [
+            args.camera_custom[0:3],  # camera position
+            args.camera_custom[3:6],  # focal point
+            args.camera_custom[6:9]   # view up
+        ]
+    elif args.camera_position:
+        camera_position = args.camera_position
+    
+    try:
+        render_scene(
+            neuron_mesh_dir=args.neuron_mesh_dir,
+            vesicle_mesh_dir=args.vesicle_mesh_dir,
+            offsets_csv=args.offsets_csv,
+            show_plotter=not args.no_interactive,
+            camera_position=camera_position,
+            screenshot_path=args.output
+        )
+        
+        if args.no_interactive:
+            print(f"✅ Scene rendered and saved to: {args.output}")
+        else:
+            print("✅ Interactive PyVista scene displayed!")
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+    
+    return 0
+
+
+if __name__ == "__main__":
+    exit(main())

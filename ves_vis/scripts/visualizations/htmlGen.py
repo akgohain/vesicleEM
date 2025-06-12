@@ -1,8 +1,16 @@
+"""
+HTML Viewer Generation Script
+
+Generates an HTML visualization from vesicle data, neuron models, and color maps.
+Creates a complete viewer package with all necessary files copied to output directory.
+"""
+
 import os
 import json
 import shutil
 import pandas as pd
 import pyarrow.parquet as pq
+import argparse
 from pathlib import Path
 
 TEMPLATE_HTML_PATH = "vesicle_template.html"
@@ -68,7 +76,9 @@ def generate_html(
     offset_csv_path: str,
     neuron_glb_dir: str,
     vesicle_color_map_path: str,
-    output_dir: str = "vesicle_viewer_output"
+    output_dir: str = "vesicle_viewer_output",
+    template_path: str = None,
+    verbose: bool = True
 ):
     """
     Generates an HTML file for visualizing vesicles and neurons.
@@ -81,13 +91,26 @@ def generate_html(
         neuron_glb_dir (str): Path to the directory containing neuron GLB files.
         vesicle_color_map_path (str): Path to the JSON file containing the vesicle color map.
         output_dir (str, optional): Path to the output directory. Defaults to "vesicle_viewer_output".
+        template_path (str, optional): Path to HTML template file. Defaults to "vesicle_template.html".
+        verbose (bool): Print status messages.
     Returns:
         None: This function does not return any value. It generates files in the specified output directory.
     """
+    if template_path:
+        template_file_path = template_path
+    else:
+        template_file_path = TEMPLATE_HTML_PATH
+    
+    if not Path(template_file_path).exists():
+        raise FileNotFoundError(f"HTML template file not found: {template_file_path}")
+    
     output_dir = Path(output_dir)
     data_dir = output_dir / "data"
     neuron_output_dir = output_dir / "neurons"
 
+    if verbose:
+        print(f"Creating output directories at: {output_dir}")
+    
     output_dir.mkdir(parents=True, exist_ok=True)
     data_dir.mkdir(parents=True, exist_ok=True)
     neuron_output_dir.mkdir(parents=True, exist_ok=True)
@@ -97,17 +120,99 @@ def generate_html(
 
     color_map_output_path = data_dir / "colormap.json"
     shutil.copy(vesicle_color_map_path, color_map_output_path)
-    print(f"Custom color map copied to: {color_map_output_path}")
+    if verbose:
+        print(f"Custom color map copied to: {color_map_output_path}")
 
     neuron_files = list(Path(neuron_glb_dir).glob("*.glb"))
     for file in neuron_files:
         shutil.copy(file, neuron_output_dir / file.name)
-    print(f"Copied {len(neuron_files)} neuron GLB files to: {neuron_output_dir}")
+    if verbose:
+        print(f"Copied {len(neuron_files)} neuron GLB files to: {neuron_output_dir}")
 
-    with open(TEMPLATE_HTML_PATH, 'r') as template_file:
+    with open(template_file_path, 'r') as template_file:
         html_content = template_file.read()
 
     html_output_path = output_dir / "index.html"
     with open(html_output_path, 'w') as out_html:
         out_html.write(html_content)
-    print(f"Viewer HTML created at: {html_output_path}")
+    if verbose:
+        print(f"Viewer HTML created at: {html_output_path}")
+
+
+def main():
+    """Main function to handle command-line arguments and run HTML generation."""
+    parser = argparse.ArgumentParser(
+        description="Generate HTML viewer for vesicle and neuron visualization",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    parser.add_argument(
+        "vesicle_parquet",
+        type=str,
+        help="Path to vesicle data parquet file"
+    )
+    
+    parser.add_argument(
+        "offset_csv",
+        type=str,
+        help="Path to CSV file containing neuron offset data"
+    )
+    
+    parser.add_argument(
+        "neuron_glb_dir",
+        type=str,
+        help="Directory containing neuron GLB files"
+    )
+    
+    parser.add_argument(
+        "color_map",
+        type=str,
+        help="Path to vesicle color map JSON file"
+    )
+    
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default="vesicle_viewer_output",
+        help="Output directory for generated viewer"
+    )
+    
+    parser.add_argument(
+        "-t", "--template",
+        type=str,
+        default=None,
+        help="Path to HTML template file (defaults to vesicle_template.html)"
+    )
+    
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress verbose output"
+    )
+    
+    args = parser.parse_args()
+    
+    try:
+        generate_html(
+            vesicle_parquet_path=args.vesicle_parquet,
+            offset_csv_path=args.offset_csv,
+            neuron_glb_dir=args.neuron_glb_dir,
+            vesicle_color_map_path=args.color_map,
+            output_dir=args.output,
+            template_path=args.template,
+            verbose=not args.quiet
+        )
+        
+        if not args.quiet:
+            print(f"\nHTML viewer generation complete!")
+            print(f"Open {Path(args.output) / 'index.html'} in your browser to view the visualization.")
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+    
+    return 0
+
+
+if __name__ == "__main__":
+    exit(main())
