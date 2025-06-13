@@ -35,7 +35,7 @@ def extract_vesicle_data(
                                      will effectively be (voxel_x, voxel_y, voxel_z).
     - verbose (bool): Print status and preview (default: True).
 
-    ⚠️ Assumes voxel physical dimensions are (x=30nm, y=8nm, z=8nm) by default.
+    Assumes voxel physical dimensions are (x=30nm, y=8nm, z=8nm) by default.
     These may vary by dataset. Ensure `voxel_dims_nm` is set correctly if your data differs.
 
     Returns:

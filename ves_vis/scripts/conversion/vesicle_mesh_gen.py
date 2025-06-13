@@ -62,7 +62,7 @@ def vesicles_to_mesh(
         sphere_meshes.append(sphere)
 
         if verbose and (i + 1) % 1000 == 0:
-            print(f"  🎨 Processed {i+1}/{len(coords)} vesicles...")
+            print(f"  Processed {i+1}/{len(coords)} vesicles...")
 
     if not sphere_meshes:
         print("Warning: No vesicles processed, resulting mesh will be empty.")

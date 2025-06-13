@@ -81,7 +81,7 @@ def vesicles_to_plotly(
     if filter_sample_id:
         df = df.filter(pl.col("sample_id") == filter_sample_id)
         if verbose:
-            print(f"🔍 Filtering by sample_id: {filter_sample_id} → {len(df)} vesicles")
+            print(f"Filtering by sample_id: {filter_sample_id} -> {len(df)} vesicles")
 
     required_cols = {"x", "y", "z"}
     if not required_cols.issubset(set(df.columns)):
@@ -241,9 +241,9 @@ def main():
         
         if not args.quiet:
             if args.output:
-                print(f"\n✅ Interactive Plotly visualization saved to: {args.output}")
+                print(f"\nInteractive Plotly visualization saved to: {args.output}")
             else:
-                print(f"\n✅ Interactive Plotly visualization opened in browser!")
+                print(f"\nInteractive Plotly visualization opened in browser!")
             
     except Exception as e:
         print(f"Error: {e}")

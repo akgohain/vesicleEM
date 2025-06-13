@@ -298,9 +298,9 @@ def main():
         )
         
         if args.no_interactive:
-            print(f"✅ Scene rendered and saved to: {args.output}")
+            print(f"Scene rendered and saved to: {args.output}")
         else:
-            print("✅ Interactive PyVista scene displayed!")
+            print("Interactive PyVista scene displayed!")
             
     except Exception as e:
         print(f"Error: {e}")

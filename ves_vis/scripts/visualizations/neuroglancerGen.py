@@ -211,7 +211,7 @@ def launch_neuroglancer(neuron_h5_dir, vesicle_h5_path, offset_csv_path, voxel_r
         logging.error(f"Vesicle HDF5 file not found: {vesicle_h5_path}")
         return None
 
-    print("🧠 Neuroglancer viewer is live:")
+    print("Neuroglancer viewer is live:")
     print(viewer)
     return viewer
 
@@ -299,19 +299,19 @@ def main():
             return 1
         
         if not args.quiet:
-            print(f"\n✅ Neuroglancer viewer successfully launched!")
+            print(f"\nNeuroglancer viewer successfully launched!")
             print(f"   Open the URL above in your browser to view the data.")
         
         if args.keep_open:
             if not args.quiet:
-                print("\n🔄 Keeping viewer open. Press Ctrl+C to stop...")
+                print("\nKeeping viewer open. Press Ctrl+C to stop...")
             try:
                 import time
                 while True:
                     time.sleep(1)
             except KeyboardInterrupt:
                 if not args.quiet:
-                    print("\n👋 Shutting down Neuroglancer viewer...")
+                    print("\nShutting down Neuroglancer viewer...")
         
     except Exception as e:
         print(f"Error: {e}")
