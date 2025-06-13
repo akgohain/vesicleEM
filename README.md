@@ -108,7 +108,7 @@ To install all dependencies, use the central `requirements.txt` file:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/vesicleEM.git
+git clone https://github.com/PytorchConnectomics/vesicleEM.git
 cd vesicleEM
 
 # Install all dependencies
