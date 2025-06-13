@@ -27,7 +27,7 @@ data_dir = 'sample'
 vol_name = '7-13'
 
 clahe = readvol(os.path.join(data_dir, vol_name+"_clahe.h5"))
-mask = readvol(os.path.join(data_dir, vol_name+"_mask.h5"))
+mask = readvol(os.path.join(data_dir, vol_name+"_mask.h5")).astype(np.uint8)
 gt = readvol(os.path.join(data_dir, vol_name+"_ves.h5"))
 pred = readvol(os.path.join(data_dir, vol_name+"_pred.h5"))
 
