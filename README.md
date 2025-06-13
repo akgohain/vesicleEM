@@ -53,9 +53,9 @@ VesicleEM supports various data formats commonly used in connectomics:
 - **Feature Extraction**: Automated morphometric feature computation
 - **Model Architectures**: StandardNet CNN with customizable depth
 - **Evaluation Metrics**: Accuracy, precision, recall, and F1-score analysis
-- **HTML Visualization**: Interactive web interface for result inspection
+- **HTML Visualization**: Interactive web interface for result inspection & proofreading
 
-### `ves_embed/` - Unsupervised Learning
+### `ves_unsup/` - Unsupervised Learning
 **VAE-based embedding and clustering for vesicle pattern discovery**
 
 - **Variational Autoencoders**: Learn latent representations of vesicle morphology
@@ -73,16 +73,6 @@ VesicleEM supports various data formats commonly used in connectomics:
   # Run cluster analysis
   jupyter notebook ves_ncls/cluster_analysis.ipynb
   ```
-
-## Quality Control and Validation
-
-### `ves_check/` - Web-based Proofreading
-**Interactive toolbox for manual validation and correction**
-
-- **Quality Control Interface**: Web-based proofreading of segmentation results
-- **Manual Correction Tools**: Edit and refine automated predictions
-- **Validation Workflows**: Systematic review of model outputs
-- **Export Functions**: Save corrected annotations for retraining
 
 ## Analysis and Visualization
 
