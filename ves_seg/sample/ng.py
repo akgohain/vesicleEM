@@ -31,16 +31,12 @@ mask = readvol(os.path.join(data_dir, vol_name+"_mask.h5"))
 gt = readvol(os.path.join(data_dir, vol_name+"_ves.h5"))
 pred = readvol(os.path.join(data_dir, vol_name+"_pred.h5"))
 
-mask_orig = mask
-for i in range(2):
-    mask = morphology.binary_dilation(mask, morphology.ball(radius=2))
-gt= gt * mask
 pred = pred * mask
 
 with viewer.txn() as s:
     s.layers.append(name='clahe',layer=ng_layer(clahe, res=[8, 8, 30], tt='image'))
     s.layers.append(name='gt',layer=ng_layer(gt, res=[8, 8, 30], tt='segmentation'))
-    s.layers.append(name='mask',layer=ng_layer(mask_orig, res=[8, 8, 30]))
+    s.layers.append(name='mask',layer=ng_layer(mask, res=[8, 8, 30]))
     s.layers.append(name='pred',layer=ng_layer(pred, res=[8, 8, 30], tt='segmentation'))
 
 print(viewer)
