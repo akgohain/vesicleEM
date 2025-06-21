@@ -4,7 +4,7 @@ import h5py
 from .bbox import compute_bbox_all_chunk, merge_bbox_one_matrix, compute_bbox_all
 from .arr import UnionFind
 from .io import vol_downsample_chunk,read_h5,write_h5,get_h5_chunk2d
-import cc3d
+#import cc3d
 from tqdm import tqdm
 
 
@@ -66,7 +66,7 @@ def seg_cc_chunk(seg_file, output_file, output_chunk=8192, dt=np.uint16, \
         vol = np.array(seg[i*num_z:(i+1)*num_z])
         if seg_func is not None:
             vol = seg_func(vol)
-        vol_cc = cc3d.connected_components(vol, connectivity=6)
+        vol_cc = None #cc3d.connected_components(vol, connectivity=6)
         mm = vol_cc.max()
         vol_cc[vol_cc>0] += max_id
         out[i*num_z:(i+1)*num_z] = vol_cc        

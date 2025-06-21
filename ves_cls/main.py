@@ -11,6 +11,7 @@ import glob
 import os
 import shutil
 import h5py
+import argparse
 
 from scripts.html_visualization import HtmlGenerator
 from scripts.data_loader import create_data_loader
@@ -352,23 +353,24 @@ def create_balanced_dataset_from_all_cells(output_folder):
         f.create_dataset('main', data=labels[all_idx])
     print(f"Balanced dataset saved to {output_folder} with {len(all_idx)} samples.")
 
-def run_new_training_from_balanced_data():
+def run_new_training_from_balanced_data(checkpoint_path, num_epochs, batch_size, n_channels, n_classes, lr, momentum):
     balanced_dir = os.path.join('data', 'balanced_from_multi')
     create_balanced_dataset_from_all_cells(balanced_dir)
-    checkpoint_out = 'model_checkpoint_balanced_multi.pth'
 
     train_and_save_model(
-        os.path.join(balanced_dir, 'im.h5'),
-        os.path.join(balanced_dir, 'mask.h5'),
-        os.path.join(balanced_dir, 'label.h5'),
-        checkpoint_out,
-        batch_size=128,
-        n_channels=1,
-        n_classes=3,
-        num_epochs=50,
-        lr=0.001,
-        momentum=0.9
+        image_file=os.path.join(balanced_dir, 'im.h5'),
+        mask_file=os.path.join(balanced_dir, 'mask.h5'),
+        label_file=os.path.join(balanced_dir, 'label.h5'),
+        checkpoint_path=checkpoint_path,
+        batch_size=batch_size,
+        n_channels=n_channels,
+        n_classes=n_classes,
+        num_epochs=num_epochs,
+        lr=lr,
+        momentum=momentum
     )
+
+    evaluate_on_all_valid_datasets(checkpoint_path)
 
 def evaluate_on_all_valid_datasets(checkpoint_path):
     base_dir = 'data'
@@ -394,37 +396,64 @@ def evaluate_on_all_valid_datasets(checkpoint_path):
             batch_size=128
         )
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run vesicle classification pipeline.")
+
+    # Shared
+    parser.add_argument('--mode', choices=['train', 'eval', 'predict'], required=True, help="Mode to run: train, eval, or predict")
+    parser.add_argument('--checkpoint_path', type=str, required=True, help="Path to model checkpoint file")
+
+    # Train-specific
+    parser.add_argument('--num_epochs', type=int, default=40, help="Number of epochs for training")
+
+    # Eval-specific
+    parser.add_argument('--eval_target', type=str, default=None,
+                        help="Folder name (e.g. neuron) to evaluate. If omitted, will evaluate all valid datasets.")
+
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
 
-    checkpoint_path = 'model_checkpoint_balanced_multi.pth'
-    color_labels = ["undefined", "CV", "DV", "DVH"]
+    args = parse_args()
+    matplotlib.use('Agg')  # for headless environments
+
     # Model and training parameters
-    num_epochs = 40
     batch_size = 128
     n_channels = 1
     n_classes = 3
     lr = 0.001
     momentum = 0.9
-    matplotlib.use('Agg')
 
-    #Set this to true to train a NEW NETWORK with balanced data sampled from ALL AVAILABLE CELLS
-    run_balanced_training = False
-    if run_balanced_training:
-        run_new_training_from_balanced_data()
-        evaluate_on_all_valid_datasets('model_checkpoint_balanced_multi.pth')
+    if args.mode == 'train':
+        run_new_training_from_balanced_data(
+            checkpoint_path=args.checkpoint_path,
+            num_epochs=args.num_epochs,
+            batch_size=batch_size,
+            n_channels=n_channels,
+            n_classes=n_classes,
+            lr=lr,
+            momentum=momentum
+        )
+    elif args.mode == 'eval':
+        if args.eval_target:
+            folder_path = os.path.join("data", args.eval_target)
+            im_path = os.path.join(folder_path, "im.h5")
+            mask_path = os.path.join(folder_path, "mask.h5")
+            label_path = os.path.join(folder_path, "label.h5")
+            eval_model_results(im_path, mask_path, label_path, args.checkpoint_path,
+                               n_channels, n_classes, batch_size, lr, momentum)
+        else:
+            evaluate_on_all_valid_datasets(args.checkpoint_path)
+    elif args.mode == 'predict':
+        neuron_list = sort_files_to_directories("data/to_be_sorted")
+        color_labels = ["undefined", "CV", "DV", "DVH"]
 
-    source_folder = "data/to_be_sorted"
-    neuron_list = sort_files_to_directories(source_folder)
-    #resut_sub_folders = [os.path.basename(f.path) for f in os.scandir("results")]
-    #neuron_list = resut_sub_folders
+        for neuron_name in neuron_list:
+            print(f"Beginning visualization for {neuron_name}...")
+            data_dir = os.path.join("data", neuron_name)
+            save_dir = os.path.join("results", neuron_name)
 
-    for neuron_name in neuron_list:
-        print(f"Beginning visualization for {neuron_name}...")
-        data_dir = os.path.join("data", neuron_name)
-        save_dir = os.path.join("results", neuron_name)
-
-        visualize_testing = True
-        if visualize_testing:
             # Define the input file paths based on the neuron name
             vesicle_file = os.path.join(data_dir, f"vesicle_big_{neuron_name}_30-8-8_patch.h5")
             bounding_box_file = os.path.join(data_dir, f"vesicle_big-bbs_{neuron_name}_30-8-8.h5")
@@ -436,25 +465,8 @@ if __name__ == '__main__':
             test_label_file = None
 
             # Run prediction and HTML generation
-            predict_images(
-                test_image_file,
-                test_mask_file,
-                test_label_file,
-                bounding_box_file,
-                checkpoint_path,
-                save_dir,
-                n_channels,
-                n_classes,
-                batch_size,
-                lr,
-                momentum
-            )
-        generate_html_visualization = True
-        if generate_html_visualization:
+            predict_images(test_image_file, test_mask_file, test_label_file, bounding_box_file,
+                           args.checkpoint_path, save_dir, n_channels, n_classes, batch_size, lr, momentum)
+
             generate_html(save_dir, save_dir, color_labels)
             print(f"{neuron_name} has been visualized.")
-
-    image_file = 'data/SHL55/im.h5'
-    mask_file = 'data/SHL55/mask.h5'
-    label_file = 'data/SHL55/label.h5'
-    eval_model_results(image_file, mask_file, label_file, checkpoint_path, n_channels, n_classes, batch_size, lr, momentum)

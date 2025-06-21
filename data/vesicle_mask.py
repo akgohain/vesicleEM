@@ -4,7 +4,7 @@ from util import *
 import numpy as np
 from neuron_mask import neuron_id_to_bbox, neuron_to_id_name
 import statistics
-import cc3d
+#import cc3d
 
 def crop_to_tile(vol, conf, opt, zz, rc):
     meta = np.loadtxt(conf['vesicle_zchunk_meta'].format(zz[0], zz[1])).astype(int)
@@ -179,6 +179,7 @@ def neuron_id_to_vesicle(conf, neuron_id, ratio=[1,4,4], opt='big', output_file=
     return out
 
 def vesicle_vast_small_vesicle(seg_file, meta_file, output_file=None, output_chunk=8192):
+    '''
     _, meta_n = read_vast_seg(meta_file)
     relabel = vast_meta_relabel(meta_file)
     if output_file is None or not os.path.exists(output_file):
@@ -208,8 +209,9 @@ def vesicle_vast_small_vesicle(seg_file, meta_file, output_file=None, output_chu
             fid.close()
         else:
             return out_sv
-
+    '''
 def vesicle_vast_big_vesicle(seg_file, meta_file, dust_size=50, output_file=None, chunk_num=1, no_tqdm=False):
+    '''
     meta_d, meta_n = read_vast_seg(meta_file)
     relabel = vast_meta_relabel(meta_file)    
     if output_file is None or not os.path.exists(output_file):
@@ -236,7 +238,7 @@ def vesicle_vast_big_vesicle(seg_file, meta_file, dust_size=50, output_file=None
             seg_cc_chunk(seg_file, output_file, dt=np.uint16, seg_func=seg_func, chunk_num=chunk_num, no_tqdm=no_tqdm, dust_size=dust_size)
             seg_rm = [sv_id, lv_id]
             seg_add_chunk(output_file, chunk_num, 'all', np.uint16(meta_d[-1,0]), seg_file, seg_rm, no_tqdm=no_tqdm)
-            
+  '''
     
 if __name__ == "__main__":
     conf = read_yml('conf/param.yml')
@@ -291,11 +293,13 @@ if __name__ == "__main__":
                 if args.vesicle in ['','big']:
                     lv_file2 = lv_file.replace(suffix, suffix2)
                     seg_downsample_chunk(lv_file, args.ratio, lv_file2, args.chunk_num)                
+
     elif args.task == 'neuron-vesicle-patch':
         # python vesicle_mask.py -t neuron-vesicle-patch -ir /projects/weilab/dataset/hydra/results_0408/ -n KR6 -v big -cn 10
         suffix = arr_to_str(conf['res'])
         for neuron in args.neuron[args.job_id::args.job_num]:
-            neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
+            #neuron_id, neuron_name = neuron_to_id_name(conf, neuron)
+            neuron_name = args.neuron
             ves_file, im_file, bbs_file = [os.path.join(args.input_folder, f'vesicle_{x}_{neuron_name}_{suffix}.h5') for x in [args.vesicle, 'im', f'{args.vesicle}-bbs']]
             output_file = ves_file.replace('.h5', '_patch.h5')
             if not os.path.exists(output_file):                
