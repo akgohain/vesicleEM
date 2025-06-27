@@ -1,10 +1,10 @@
-# VesicleEM: Deep Learning Toolkit for Synaptic Vesicle Analysis
+# VesiclePy: Deep Learning Toolkit for Synaptic Vesicle Analysis
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-1.10%2B-red.svg)](https://pytorch.org/)
 
-VesicleEM is a deep learning toolkit for synaptic vesicle analysis in electron microscopy data, providing tools for segmentation, classification, and statistical analysis of vesicles, along with web-based proofreading tools and visualization capabilities.
+VesiclePy is a deep learning toolkit for synaptic vesicle analysis in electron microscopy data, providing tools for segmentation, classification, and statistical analysis of vesicles, along with web-based proofreading tools and visualization capabilities.
 
 ![Workflow Overview](flowchart.png)
 
@@ -19,7 +19,7 @@ VesicleEM is a deep learning toolkit for synaptic vesicle analysis in electron m
 
 # Supported Data Formats
 
-VesicleEM supports various data formats commonly used in connectomics:
+VesiclePy supports various data formats commonly used in connectomics:
 
 - [HDF5](https://www.hdfgroup.org/solutions/hdf5/) - Primary format for volumetric data
 - [Neuroglancer Precomputed](https://github.com/google/neuroglancer/tree/master/src/datasource/precomputed) - Web-based visualization
@@ -108,8 +108,8 @@ To install all dependencies, use the central `requirements.txt` file:
 
 ```bash
 # Clone the repository
-git clone https://github.com/PytorchConnectomics/vesicleEM.git
-cd vesicleEM
+git clone https://github.com/PytorchConnectomics/VesiclePy.git
+cd VesiclePy
 
 # Install all dependencies
 pip install -r requirements.txt
@@ -117,4 +117,4 @@ pip install -r requirements.txt
 
 # License
 
-VesicleEM is released under the MIT License. See LICENSE file for details.
+VesiclePy is released under the MIT License. See LICENSE file for details.
