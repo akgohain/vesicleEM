@@ -104,7 +104,9 @@ python scripts/visualizations/neuroglancerGen.py neuron_h5_files/ vesicles.h5 of
 
 ## An Example Visualization On Sample Data
 
-This complete pipeline demonstrates how to process raw vesicle mapping files into a final interactive 3D visualization. Follow these exact steps to reproduce the visualization:
+This complete pipeline demonstrates how to process raw vesicle mapping files into a final interactive 3D visualization using plotly. Follow these exact steps to reproduce the visualization:
+
+For a large-scale visualization of the case study Hydra Vulgaris dataset, see: [https://akgohain.github.io/hydra_types/](https://akgohain.github.io/hydra_types/), where vesicles in all 20 neurons are colored by type.
 
 ### Prerequisites
 ```bash
@@ -150,19 +152,6 @@ Open `sample_visualization.html` in your browser to view the interactive 3D visu
 - Vesicles colored by type using the viridis colormap
 - Semi-transparent neuron mesh for spatial context
 - Interactive controls for rotation, zoom, and inspection
-
-### Pipeline Summary
-1. **Data Extraction**: Processes 204 vesicles from raw mapping files with automatic coordinate conversion
-2. **Mesh Generation**: Creates 3D surface mesh from 80×1000×1000 voxel neuron mask
-3. **Visualization**: Combines vesicle point cloud with neuron mesh in properly aligned coordinate system
-
-## Notes
-
-- **File Formats**: Supports multiple mesh formats (OBJ, PLY, GLB, STL) and data formats (Parquet, CSV, JSON)
-- **Coordinate Systems**: The `dfGen.py` script automatically swaps X/Z coordinates when processing mapping files. For visualization, use the `--swap-vesicle-xz` flag in `plotlyGen.py` to ensure proper alignment between vesicle and mesh data.
-- **Memory Management**: Large datasets are processed in chunks with explicit garbage collection
-- **Remote Usage**: Neuroglancer requires port forwarding when running on remote servers
-- **Dependencies**: Install visualization packages only as needed to minimize setup complexity
 
 ## Troubleshooting
 
